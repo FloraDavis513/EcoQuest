@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcoQuest
@@ -13,10 +14,17 @@ namespace EcoQuest
             builder.Services.AddHealthChecks();
 
             builder.Services.AddDbContext<eco_questContext>(options => options.UseNpgsql(dbConnectionString));
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
             builder.Services.AddCors();
 
             var app = builder.Build();
 
+            app.UseForwardedHeaders();
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
