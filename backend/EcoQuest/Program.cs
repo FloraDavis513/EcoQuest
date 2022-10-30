@@ -10,10 +10,12 @@ namespace EcoQuest
 
             string dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddDbContext<eco_questContext>(options => options.UseNpgsql(dbConnectionString));
             builder.Services.AddCors();
 
-            WebApplication app = builder.Build();
+            var app = builder.Build();
 
             app.UseCors(builder =>
             {
@@ -22,14 +24,12 @@ namespace EcoQuest
                 builder.AllowAnyHeader();
             });
 
+            app.UseRouting();
 
-
-
-
-
-
-
-
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/health");
+            });
 
             app.MapGet("/admin/leaders", (eco_questContext db) =>
             {
