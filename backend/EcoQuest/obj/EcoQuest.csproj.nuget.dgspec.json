@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Michael\\Desktop\\Новая папка\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {}
+    "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Michael\\Desktop\\Новая папка\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {
+    "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Michael\\Desktop\\Новая папка\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
+        "projectUniqueName": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
         "projectName": "EcoQuest",
-        "projectPath": "C:\\Users\\Michael\\Desktop\\Новая папка\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
+        "projectPath": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
         "packagesPath": "C:\\Users\\Michael\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Michael\\Desktop\\Новая папка\\EcoQuest\\EcoQuest\\obj\\",
+        "outputPath": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -48,6 +48,10 @@
               "target": "Package",
               "version": "[5.2.9, )"
             },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[6.0.10, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[6.0.10, )"
@@ -57,10 +61,6 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[6.0.10, )"
-            },
-            "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": {
-              "target": "Package",
-              "version": "[1.17.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",

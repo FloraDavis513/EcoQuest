@@ -21,14 +21,13 @@ namespace EcoQuest
         public virtual DbSet<ProductsForBoard> ProductsForBoards { get; set; } = null!;
         public virtual DbSet<Question> Questions { get; set; } = null!;
         public virtual DbSet<Session> Sessions { get; set; } = null!;
+        public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                /*
-                optionsBuilder.UseNpgsql("Server=localhost;Port=8082;Database=eco_quest;UID=postgres;PWD=qwerty123iop");
-                */
+                //optionsBuilder.UseNpgsql("Server=localhost;Port=8082;Database=eco_quest;UID=postgres;PWD=qwerty123iop");
             }
         }
 
@@ -48,7 +47,7 @@ namespace EcoQuest
                 entity.HasKey(e => e.InstalledRank)
                     .HasName("flyway_schema_history_pk");
 
-                entity.ToTable("flyway_schema_history");
+                entity.ToTable("flyway_schema_history", "\"$user\", public");
 
                 entity.HasIndex(e => e.Success, "flyway_schema_history_s_idx");
 
@@ -185,9 +184,7 @@ namespace EcoQuest
                     .ValueGeneratedNever()
                     .HasColumnName("uuid");
 
-                entity.Property(e => e.IdCurrentQuestion)
-                    .HasColumnType("bigint")
-                    .HasColumnName("id_current_question");
+                entity.Property(e => e.IdCurrentQuestion).HasColumnName("id_current_question");
 
                 entity.Property(e => e.State)
                     .HasColumnType("character varying")
@@ -197,6 +194,45 @@ namespace EcoQuest
                     .HasMaxLength(255)
                     .HasColumnName("username");
             });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("users");
+
+                entity.Property(e => e.UserId)
+                    .HasColumnName("user_id")
+                    .HasDefaultValueSql("nextval('user_id_seq'::regclass)");
+
+                entity.Property(e => e.FirstName)
+                    .HasColumnType("character varying")
+                    .HasColumnName("first name");
+
+                entity.Property(e => e.LastName)
+                    .HasColumnType("character varying")
+                    .HasColumnName("last name");
+
+                entity.Property(e => e.Login)
+                    .HasColumnType("character varying")
+                    .HasColumnName("login");
+
+                entity.Property(e => e.Password)
+                    .HasColumnType("character varying")
+                    .HasColumnName("password");
+
+                entity.Property(e => e.Patronymic)
+                    .HasColumnType("character varying")
+                    .HasColumnName("patronymic");
+
+                entity.Property(e => e.Role)
+                    .HasColumnType("character varying")
+                    .HasColumnName("role");
+
+                entity.Property(e => e.Status)
+                    .HasColumnType("character varying")
+                    .HasColumnName("status");
+            });
+
+            modelBuilder.HasSequence("user_id_seq");
 
             OnModelCreatingPartial(modelBuilder);
         }

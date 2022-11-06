@@ -1,5 +1,11 @@
-using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EcoQuest
 {
@@ -11,76 +17,232 @@ namespace EcoQuest
 
             string dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-            builder.Services.AddHealthChecks();
-
             builder.Services.AddDbContext<eco_questContext>(options => options.UseNpgsql(dbConnectionString));
-
-            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
             {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.TokenValidationParameters = new TokenValidationParameters { ValidateIssuer = true, ValidIssuer = AuthenticationOptions.ISSUER, ValidateAudience = true,
+                    ValidAudience = AuthenticationOptions.AUDIENCE, ValidateLifetime = true, IssuerSigningKey = AuthenticationOptions.GetSymmetricSecurityKey(), ValidateIssuerSigningKey = true };
             });
+            builder.Services.AddAuthorization();
             builder.Services.AddCors();
 
-            var app = builder.Build();
+            WebApplication app = builder.Build();
 
-            app.UseForwardedHeaders();
+            //app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto });
+            //builder.Services.Configure<ForwardedHeadersOptions>(options => options.KnownProxies.Add(IPAddress.Parse("213.189.217.150")));
+
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
-                builder.AllowAnyMethod();
                 builder.AllowAnyHeader();
+                builder.AllowAnyMethod();
             });
 
-            app.UseRouting();
 
-            app.UseEndpoints(endpoints =>
+
+
+
+
+
+
+
+            
+            app.MapGet("/", [Authorize(Roles = "adminadmin, masteractive, masterinactive, player")] (eco_questContext db) =>
             {
-                endpoints.MapHealthChecks("/health");
+                Console.WriteLine("==========/==========");
+
+                return Results.Ok();
             });
 
+            app.MapGet("/auth/login", [Authorize(Roles = "adminadmin, masteractive, masterinactive, player")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/auth/login==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/auth/registration", [Authorize(Roles = "adminadmin, masteractive, masterinactive, player")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/auth/registration==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/fields", [Authorize(Roles = "adminadmin")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/fields==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/game", [Authorize(Roles = "adminadmin, masteractive, player")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/game==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/lobby", [Authorize(Roles = "adminadmin, masteractive, player")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/lobby==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/status", [Authorize(Roles = "adminadmin, masteractive")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/status==========");
+
+                return Results.Ok();
+            });
+
+            app.MapGet("/templates", [Authorize(Roles = "adminadmin, masteractive")] (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/templates==========");
+
+                return Results.Ok();
+            });
+            
+            
+
+
+
+
+
+
+
+
+            //Получение списка подтвержденных ведущих
             app.MapGet("/admin/leaders", (eco_questContext db) =>
             {
                 Console.WriteLine("==========/admin/leaders==========");
+
+                List<User> activeMasters = (from u in db.Users where u.Role == "master" && u.Status == "active" select u).ToList();
+
+                List<AdminLeadersWaitingResponse> response = new List<AdminLeadersWaitingResponse>();
+
+                foreach (var activeMaster in activeMasters)
+                {
+                    response.Add(new AdminLeadersWaitingResponse() { UserId = activeMaster.UserId, LastName = activeMaster.LastName,
+                        FirstName = activeMaster.FirstName, Patronymic = activeMaster.Patronymic, Login = activeMaster.Login });
+                }
+
+                return Results.Json(response);
             });
 
+            //Подтверждение ведущего по id
+            app.MapGet("/admin/register/approve/{userId:long}", (eco_questContext db, long userId) =>
+            {
+                Console.WriteLine("==========/admin/register/approve/{userId:long}==========");
+
+                User? approvedUser = (from u in db.Users where u.UserId == userId select u).ToList().FirstOrDefault();
+
+                if (approvedUser != null)
+                {
+                    approvedUser.Status = "active";
+                    db.SaveChanges();
+                }
+            });
+
+            //Удаление ведущего по id
+            app.MapGet("/admin/register/decline/{userId}", (eco_questContext db, long userId) =>
+            {
+                Console.WriteLine("==========/admin/register/decline/{userId:long}==========");
+
+                User? declinedUser = (from u in db.Users where u.UserId == userId select u).ToList().FirstOrDefault();
+
+                if (declinedUser != null)
+                {
+                    db.Users.Remove(declinedUser);
+                    db.SaveChanges();
+                }
+            });
+
+            //Получение списка ведущих, ожидающих подтверждения
             app.MapGet("/admin/waiting", (eco_questContext db) =>
             {
                 Console.WriteLine("==========/admin/waiting==========");
+
+                List<User> inactiveMasters = (from u in db.Users where u.Role == "master" && u.Status == "inactive" select u).ToList();
+
+                List<AdminLeadersWaitingResponse> response = new List<AdminLeadersWaitingResponse>();
+
+                foreach (var inactiveMaster in inactiveMasters)
+                {
+                    response.Add(new AdminLeadersWaitingResponse() { UserId = inactiveMaster.UserId, LastName = inactiveMaster.LastName,
+                        FirstName = inactiveMaster.FirstName, Patronymic = inactiveMaster.Patronymic, Login = inactiveMaster.Login });
+                }
+
+                return Results.Json(response);
             });
 
-            app.MapPost("/auth/login", (eco_questContext db) =>
+            //Вход в систему по логину и паролю (для ведущих)
+            app.MapPost("/auth/login/master", (eco_questContext db, AuthLoginMasterRequest request) =>
             {
-                Console.WriteLine("==========/auth/login==========");
+                Console.WriteLine("==========/auth/login/master==========");
+
+                User? user = (from u in db.Users where u.Login == request.Login && u.Password == Encrypt(request.Password) select u).ToList().FirstOrDefault();
+
+                if (user == null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                List<Claim> claims = new List<Claim>() { new Claim(ClaimTypes.Name, user.Login), new Claim(ClaimTypes.Role, $"{user.Role + user.Status}") };
+                JwtSecurityToken JWT = new JwtSecurityToken(issuer: AuthenticationOptions.ISSUER, audience: AuthenticationOptions.AUDIENCE, claims: claims, expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(2)),
+                    signingCredentials: new SigningCredentials(AuthenticationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+                string encodedJWT = new JwtSecurityTokenHandler().WriteToken(JWT);
+
+                return Results.Json(new { Login = user.Login, AuthorizationToken = encodedJWT });
             });
 
-            app.MapPost("/auth/register", (eco_questContext db) =>
+            //Вход в систему по id комнаты и логину (для игроков)
+            app.MapPost("/auth/login/player", (eco_questContext db, AuthLoginPlayerRequest request) =>
+            {
+                Console.WriteLine("==========/auth/login/player==========");
+
+                object game = null; // Здесь будет обращение к БД и поиск игры с нужным id
+
+                if (game == null)
+                {
+                    return Results.Unauthorized();
+                }
+
+                List<Claim> claims = new List<Claim>() { new Claim(ClaimTypes.Name, request.Login), new Claim(ClaimTypes.Role, "player") };
+                JwtSecurityToken JWT = new JwtSecurityToken(issuer: AuthenticationOptions.ISSUER, audience: AuthenticationOptions.AUDIENCE, claims: claims, expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(2)),
+                    signingCredentials: new SigningCredentials(AuthenticationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+                string encodedJWT = new JwtSecurityTokenHandler().WriteToken(JWT);
+
+                return Results.Json(new { GameId = request.GameId, Login = request.Login, AuthorizationToken = encodedJWT });
+            });
+
+            //Добавление нового ведущего
+            app.MapPost("/auth/register", (eco_questContext db, User request) =>
             {
                 Console.WriteLine("==========/auth/register==========");
+
+                User newUser = new User() { LastName = request.LastName, FirstName = request.FirstName, Patronymic = request.Patronymic,
+                    Login = request.Login, Password = Encrypt(request.Password), Role = "master", Status = "inactive" };
+
+                db.Users.Add(newUser);
+                db.SaveChanges();
             });
-            
-            
-
-
-
-
-
-
-
 
             //Создание нового шаблона
-            app.MapPost("/board/create", (eco_questContext db, BoardCreate newBoardCreate) =>
+            app.MapPost("/board/create", (eco_questContext db, BoardCreateRequest request) =>
             {
                 Console.WriteLine("==========/board/create==========");
 
-                GameBoard newGameBoard = new GameBoard() { Name = newBoardCreate.Name, NumFields = newBoardCreate.NumFields };
+                GameBoard newGameBoard = new GameBoard() { Name = request.Name, NumFields = request.NumFields };
                 db.GameBoards.Add(newGameBoard);
                 db.SaveChanges();
 
                 GameBoard addedGameBoard = (from gb in db.GameBoards where gb.Name == newGameBoard.Name select gb).ToList().First();
                 long addedGameBoardId = addedGameBoard.Id;
 
-                foreach (var item in newBoardCreate.ProductWithQuestionRqs)
+                foreach (var item in request.ProductWithQuestionRqs)
                 {
                     foreach (var questionId in item.QuestionIds)
                     {
@@ -88,7 +250,7 @@ namespace EcoQuest
                     }
                 }
 
-                foreach (var item in newBoardCreate.ProductWithQuestionRqs)
+                foreach (var item in request.ProductWithQuestionRqs)
                 {
                     db.ProductsForBoards.Add(new ProductsForBoard() { GameBoardId = addedGameBoardId, ProductId = item.ProductId, NumOfRepeating = item.NumberOfRepeating });
                 }
@@ -129,11 +291,11 @@ namespace EcoQuest
 
                 GameBoard targetGameBoard = (from gb in db.GameBoards where gb.Id == id select gb).ToArray().First();
 
-                BoardGet boardGet = new BoardGet();
+                BoardGetResponse response = new BoardGetResponse();
 
-                boardGet.Id = targetGameBoard.Id;
-                boardGet.Name = targetGameBoard.Name;
-                boardGet.NumFields = targetGameBoard.NumFields;
+                response.Id = targetGameBoard.Id;
+                response.Name = targetGameBoard.Name;
+                response.NumFields = targetGameBoard.NumFields;
 
                 List<ProductsForBoard> targetProductsForBoard = (from p in db.ProductsForBoards where p.GameBoardId == id select p).ToList();
 
@@ -164,18 +326,19 @@ namespace EcoQuest
                             targetQuestions = targetGameBoardsQuestions.Intersect(targetProductQuestoins).ToList();
                         }
 
-                        ProductGet productGet = new ProductGet() { Id = product.ProductId, Name = targetProductForBoard.Name, Colour = targetProductForBoard.Colour, NumOfRepeating = product.NumOfRepeating };
+                        ProductResponse productResponse = new ProductResponse() { Id = product.ProductId, Name = targetProductForBoard.Name,
+                            Colour = targetProductForBoard.Colour, NumOfRepeating = product.NumOfRepeating };
 
                         foreach (var question in targetQuestions)
                         {
-                            productGet.Questions.Add(question);
+                            productResponse.Questions.Add(question);
                         }
 
-                        boardGet.Products.Add(productGet);
+                        response.Products.Add(productResponse);
                     }
                 }
 
-                return Results.Json(boardGet);
+                return Results.Json(response);
             });
 
             //Получение всех существующих шаблонов
@@ -189,25 +352,25 @@ namespace EcoQuest
             });
 
             //Обновление данных о существующем шаблоне
-            app.MapPost("/board/update", (eco_questContext db, BoardCreate newBoardCreate) =>
+            app.MapPost("/board/update", (eco_questContext db, BoardCreateRequest request) =>
             {
                 Console.WriteLine("==========/board/update==========");
 
-                GameBoard targetGameBoard = (from gb in db.GameBoards where gb.Id == newBoardCreate.Id select gb).ToList().First();
+                GameBoard targetGameBoard = (from gb in db.GameBoards where gb.Id == request.Id select gb).ToList().First();
 
-                targetGameBoard.Name = newBoardCreate.Name;
-                targetGameBoard.NumFields = newBoardCreate.NumFields;
+                targetGameBoard.Name = request.Name;
+                targetGameBoard.NumFields = request.NumFields;
 
                 db.SaveChanges();
 
-                List<GameBoardsQuestion> targetGameBoardQuestions = (from q in db.GameBoardsQuestions where q.GameBoardId == newBoardCreate.Id select q).ToList();
+                List<GameBoardsQuestion> targetGameBoardQuestions = (from q in db.GameBoardsQuestions where q.GameBoardId == request.Id select q).ToList();
                 if (targetGameBoardQuestions.Count > 0)
                 {
                     db.GameBoardsQuestions.RemoveRange(targetGameBoardQuestions);
                 }
 
                 List<long> gameBoardQuestionIds = new List<long>();
-                foreach (var productWithQuestion in newBoardCreate.ProductWithQuestionRqs)
+                foreach (var productWithQuestion in request.ProductWithQuestionRqs)
                 {
                     foreach (var gameBoardQuestionId in productWithQuestion.QuestionIds)
                     {
@@ -218,7 +381,7 @@ namespace EcoQuest
                 List<GameBoardsQuestion> gameBoardQuestions = new List<GameBoardsQuestion>();
                 foreach (var questionId in gameBoardQuestionIds)
                 {
-                    gameBoardQuestions.Add(new GameBoardsQuestion { GameBoardId = newBoardCreate.Id, QuestionId = questionId });
+                    gameBoardQuestions.Add(new GameBoardsQuestion { GameBoardId = request.Id, QuestionId = questionId });
                 }
 
                 if (gameBoardQuestions.Count > 0)
@@ -228,16 +391,16 @@ namespace EcoQuest
 
                 db.SaveChanges();
 
-                List<ProductsForBoard> targetProductsForBoard = (from p in db.ProductsForBoards where p.GameBoardId == newBoardCreate.Id select p).ToList();
+                List<ProductsForBoard> targetProductsForBoard = (from p in db.ProductsForBoards where p.GameBoardId == request.Id select p).ToList();
                 if (targetProductsForBoard.Count > 0)
                 {
                     db.ProductsForBoards.RemoveRange(targetProductsForBoard);
                 }
 
                 List<ProductsForBoard> productsForBoards = new List<ProductsForBoard>();
-                foreach (var productWithQuestion in newBoardCreate.ProductWithQuestionRqs)
+                foreach (var productWithQuestion in request.ProductWithQuestionRqs)
                 {
-                    productsForBoards.Add(new ProductsForBoard() { GameBoardId = newBoardCreate.Id, ProductId = productWithQuestion.ProductId, NumOfRepeating = productWithQuestion.NumberOfRepeating });
+                    productsForBoards.Add(new ProductsForBoard() { GameBoardId = request.Id, ProductId = productWithQuestion.ProductId, NumOfRepeating = productWithQuestion.NumberOfRepeating });
                 }
 
                 if (productsForBoards.Count > 0)
@@ -248,18 +411,16 @@ namespace EcoQuest
                 db.SaveChanges();
             });
 
-            //Заглушка
             //Установка вопроса
-            app.MapPost("/game/chooseQuestion", (eco_questContext db, GameChooseQuestion inputData) =>
+            app.MapPost("/game/chooseQuestion", (eco_questContext db, GameChooseQuestionRequest request) =>
             {
                 Console.WriteLine("==========/game/chooseQuestion==========");
 
                 Session session = (from s in db.Sessions select s).ToArray().First();
-                session.IdCurrentQuestion = inputData.QuestionId;
+                session.IdCurrentQuestion = request.QuestionId;
                 db.SaveChanges();
             });
 
-            //Заглушка
             //Получение вопроса и ответа
             app.MapGet("/game/getAnswer", (eco_questContext db) =>
             {
@@ -272,11 +433,11 @@ namespace EcoQuest
             });
 
             //Создание нового продукта (вместе с вопросами)
-            app.MapPost("/product/create", (eco_questContext db, Product newProduct) =>
+            app.MapPost("/product/create", (eco_questContext db, Product request) =>
             {
                 Console.WriteLine("==========/product/create==========");
                 
-                db.Products.Add(newProduct);
+                db.Products.Add(request);
                 db.SaveChanges();
             });
 
@@ -361,25 +522,25 @@ namespace EcoQuest
             });
 
             //Обновление данных о существующем продукте (вместе с вопросами)
-            app.MapPost("/product/update", (eco_questContext db, Product newProduct) =>
+            app.MapPost("/product/update", (eco_questContext db, Product request) =>
             {
                 Console.WriteLine("==========/product/update==========");
                 
                 List<Product> allProducts = db.Products.ToList();
 
-                var targetProductSearch = (from p in allProducts where p.Id == newProduct.Id select p).ToList();
+                var targetProductSearch = (from p in allProducts where p.Id == request.Id select p).ToList();
 
                 if (targetProductSearch.Count == 0)
                 {
-                    db.Products.Add(newProduct);
+                    db.Products.Add(request);
                 }
                 else if (targetProductSearch.Count == 1)
                 {
                     Product targetProduct = targetProductSearch[0];
-                    targetProduct.Colour = newProduct.Colour;
-                    targetProduct.Name = newProduct.Name;
+                    targetProduct.Colour = request.Colour;
+                    targetProduct.Name = request.Name;
 
-                    foreach (var newQuestion in newProduct.Questions)
+                    foreach (var newQuestion in request.Questions)
                     {
                         var targetQuestionSearch = (from q in targetProduct.Questions where q.Id == newQuestion.Id select q).ToList();
 
@@ -442,24 +603,66 @@ namespace EcoQuest
 
             app.Run();
         }
+
+        public static string Encrypt(string unencryptedString)
+        {
+            MD5 hash = MD5.Create();
+            byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(unencryptedString));
+            StringBuilder encryptedBuilder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                encryptedBuilder.Append(bytes[i].ToString("x2"));
+            }
+            return encryptedBuilder.ToString();
+        }
     }
 
-    public class BoardCreate
+    public class AdminLeadersWaitingResponse
     {
-        public BoardCreate()
+        public long UserId { get; set; }
+        public string? LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? Patronymic { get; set; }
+        public string? Login { get; set; }
+    }
+
+    public class AuthenticationOptions
+    {
+        public const string ISSUER = "Backend";
+        public const string AUDIENCE = "Frontend";
+        private const string KEY = "MySuperSecretKey";
+
+        public static SymmetricSecurityKey GetSymmetricSecurityKey() => new SymmetricSecurityKey(Encoding.UTF8.GetBytes(KEY));
+    }
+
+    public class AuthLoginMasterRequest
+    {
+        public string? Login { get; set; }
+        public string? Password { get; set; }
+    }
+
+    public class AuthLoginPlayerRequest
+    {
+        public long? GameId { get; set; }
+        public string? Login { get; set; }
+    }
+
+    public class BoardCreateRequest
+    {
+        public BoardCreateRequest()
         {
-            ProductWithQuestionRqs = new HashSet<ProductWithQuestionRqs>();
+            ProductWithQuestionRqs = new HashSet<ProductWithQuestionRqsResponse>();
         }
 
         public long Id { get; set; }
         public string? Name { get; set; }
-        public virtual ICollection<ProductWithQuestionRqs> ProductWithQuestionRqs { get; set; }
+        public virtual ICollection<ProductWithQuestionRqsResponse> ProductWithQuestionRqs { get; set; }
         public int? NumFields { get; set; }
     }
 
-    public class ProductWithQuestionRqs
+    public class ProductWithQuestionRqsResponse
     {
-        public ProductWithQuestionRqs()
+        public ProductWithQuestionRqsResponse()
         {
             QuestionIds = new HashSet<long>();
         }
@@ -469,22 +672,22 @@ namespace EcoQuest
         public virtual ICollection<long> QuestionIds { get; set; }
     }
 
-    public class BoardGet
+    public class BoardGetResponse
     {
-        public BoardGet()
+        public BoardGetResponse()
         {
-            Products = new HashSet<ProductGet>();
+            Products = new HashSet<ProductResponse>();
         }
 
         public long Id { get; set; }
         public string? Name { get; set; }
-        public virtual ICollection<ProductGet> Products { get; set; }
+        public virtual ICollection<ProductResponse> Products { get; set; }
         public int? NumFields { get; set; }
     }
 
-    public class ProductGet
+    public class ProductResponse
     {
-        public ProductGet()
+        public ProductResponse()
         {
             Questions = new HashSet<Question>();
         }
@@ -496,7 +699,7 @@ namespace EcoQuest
         public int? NumOfRepeating { get; set; }
     }
 
-    public class GameChooseQuestion
+    public class GameChooseQuestionRequest
     {
         public long? QuestionId { get; set; }
         public string? QuestionType { get; set; }
