@@ -46,7 +46,12 @@ namespace EcoQuest
 
 
 
+            app.MapGet("/test/api", (eco_questContext db) =>
+            {
+                Console.WriteLine("==========/game/getAnswer==========");
 
+                return Results.Json(new { Answer = "Test", Question = "Test" });
+            });
 
             
             app.MapGet("/", [Authorize(Roles = "adminadmin, masteractive, masterinactive, player")] (eco_questContext db) =>
