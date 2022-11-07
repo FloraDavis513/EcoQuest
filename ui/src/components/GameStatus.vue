@@ -51,7 +51,7 @@ export default {
     },
     save_ans: function(data){
       this.question[1] = data.answer;
-      this.question[0] = data.state;
+      this.question[0] = data.question;
     },
   },
     beforeUnmount () {

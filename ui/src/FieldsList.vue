@@ -118,7 +118,8 @@ export default {
                 });
             if(this.selected_product[2])
             {
-                fetch("http://api.vm-96694bec.na4u.ru/product/update", {
+                console.log(1);
+                fetch(SERVER_PATH + "/product/update", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({id:this.selected_product[2], name: this.selected_product[0], colour: this.selected_product[1], questions:this.selected_product[3]})
@@ -126,11 +127,11 @@ export default {
             }
             else
             {
-                fetch("http://api.vm-96694bec.na4u.ru/product/create", {
+                fetch(SERVER_PATH + "/product/create", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({name: this.selected_product[0], colour: this.selected_product[1], questions:this.selected_product[3]})
-                })
+                });
             }
         },
         reset_edit: function(){
@@ -211,10 +212,10 @@ export default {
             headers: {'Content-Type': 'application/json'}
             }).then( res => res.json() ).then( data => data.forEach(function(item) {
                 product_ref.push({ id:item.id, text: item.name, color: item.colour, questions: item.questions })}) );
-    fetch(SERVER_PATH + "/admin/waiting", {
-            method: "GET",
-            headers: {'Content-Type': 'application/json'}
-            }).then( res => res.json() ).then( data => console.log(data) );
+    // fetch(SERVER_PATH + "/admin/waiting", {
+    //         method: "GET",
+    //         headers: {'Content-Type': 'application/json'}
+    //         }).then( res => res.json() ).then( data => console.log(data) );
   })
   }
 }

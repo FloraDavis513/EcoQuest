@@ -124,6 +124,10 @@ export default {
         delete_product: function () {
             this.draw = 'questions';
             this.$emit('final-delete-product');
+            fetch(SERVER_PATH + "/product/delete/" + String(this.selected_product[2]), {
+                method: "DELETE",
+                headers: {'Content-Type': 'application/json'}
+                });
         },
         to_questions: function () {
             this.$emit('reset-edit');

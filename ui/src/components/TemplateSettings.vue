@@ -1,5 +1,5 @@
 <template>
-<div id="question_preview" v-show="preview_question" @click="preview_question = false">
+<div id="question_preview" v-show="preview_question && visible == 1" @click="preview_question = false">
     <div class="scroll"><pre>{{ preview_text }}</pre></div>
 </div>
 <div v-if="visible==5" id="game_list">
@@ -65,14 +65,14 @@
                 <input class="check_quest_2" type="checkbox">
             </div>
         </div>
-        <div v-for="(question,index) in product.questions" :key="index" class="quest_themes" v-show="product.visible_question" @click="show_question(question.text, question.answer)">
-            <div class="last_redaction">
+        <div v-for="(question,index) in product.questions" :key="index" class="quest_themes" v-show="product.visible_question" >
+            <div class="last_redaction" @click="show_question(question.text, question.answer)">
               11.11.11
             </div>
-            <div class="name_quest2">
+            <div class="name_quest2" @click="show_question(question.text, question.answer)">
               {{question.shortText}}
             </div>
-            <div class="type_quest">
+            <div class="type_quest" @click="show_question(question.text, question.answer)">
               {{get_readiable_type(question.questionType)}}
             </div>
             <div class="check_quest">
