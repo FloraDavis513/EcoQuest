@@ -24,7 +24,6 @@ namespace EcoQuest
                     ValidAudience = AuthenticationOptions.AUDIENCE, ValidateLifetime = true, IssuerSigningKey = AuthenticationOptions.GetSymmetricSecurityKey(), ValidateIssuerSigningKey = true };
             });
             builder.Services.AddAuthorization();
-            builder.Services.AddCors();
 
             WebApplication app = builder.Build();
 
@@ -33,17 +32,6 @@ namespace EcoQuest
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseCors(builder =>
-            {
-                builder.AllowAnyOrigin();
-                builder.AllowAnyHeader();
-                builder.AllowAnyMethod();
-            });
-
-
-
-
-
 
 
             app.MapGet("/test/api", (eco_questContext db) =>
