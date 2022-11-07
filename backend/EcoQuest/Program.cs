@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 namespace EcoQuest
@@ -10,11 +11,20 @@ namespace EcoQuest
 
             string dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddDbContext<eco_questContext>(options => options.UseNpgsql(dbConnectionString));
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
             builder.Services.AddCors();
 
-            WebApplication app = builder.Build();
+            var app = builder.Build();
 
+            app.UseForwardedHeaders();
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
@@ -22,14 +32,12 @@ namespace EcoQuest
                 builder.AllowAnyHeader();
             });
 
+            app.UseRouting();
 
-
-
-
-
-
-
-
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/health");
+            });
 
             app.MapGet("/admin/leaders", (eco_questContext db) =>
             {
