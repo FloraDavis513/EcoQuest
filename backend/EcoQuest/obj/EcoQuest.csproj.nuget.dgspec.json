@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {}
+    "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj": {
+    "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
+        "projectUniqueName": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
         "projectName": "EcoQuest",
-        "projectPath": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
+        "projectPath": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
         "packagesPath": "C:\\Users\\Michael\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\obj\\",
+        "outputPath": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

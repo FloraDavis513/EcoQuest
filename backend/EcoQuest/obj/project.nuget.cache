@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JLEMdUYcNljrGOZOQMv8nytN0AXG99UTHyl4UmTV+XK6xdljLFe6bAfxO90i9Q7/YcjgaonawLbK1KB2p8rc6g==",
+  "dgSpecHash": "Brwq9NY5FH1y6bJq461Vw6eH66BJPg+tXlny62w7Y5E5d0UG3iysNgiCQ9fgMZIcxKog4p15ZQ1XKzWEaqLrGQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Michael\\Desktop\\EcoQuest\\EcoQuest\\EcoQuest.csproj",
+  "projectFilePath": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Michael\\.nuget\\packages\\humanizer.core\\2.8.26\\humanizer.core.2.8.26.nupkg.sha512",
     "C:\\Users\\Michael\\.nuget\\packages\\microsoft.aspnet.webapi.client\\5.2.9\\microsoft.aspnet.webapi.client.5.2.9.nupkg.sha512",
