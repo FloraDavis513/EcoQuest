@@ -1,237 +1,531 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using ClosedXML.Excel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Text.Unicode;
 
 namespace EcoQuest
 {
     public class ApplicationService
     {
+        public ApplicationService(WebApplication app)
+        {
+            _app = app;
+        }
+
+        private readonly WebApplication _app;
+
         public IResult AuthenticationLoginMaster(eco_questContext db, LoginMasterDTO request)
         {
             Console.WriteLine("==========/authentication/login/master==========");
 
-            User? user = (from u in db.Users where u.Login == request.Login select u).FirstOrDefault();
+            (bool, IResult) validResult = RequestValidator.ValidateLoginMasterDTO(db, request);
 
-            if (user == null)
-            {
-                return Results.NotFound("Пользователя с таким логином не существует");
-            }
-            if (user.Password != PasswordHasher.Encrypt(request.Password))
-            {
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            User? targetUser = (from u in db.Users
+                                where u.Login == request.Login
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Пользователь с запрашиваемым логином не найден");
+            if (targetUser.Password != PasswordHasher.Encrypt(request.Password))
                 return Results.Unauthorized();
-            }
 
-            List<Claim> claims = new List<Claim>() { new Claim(ClaimTypes.Name, user.Login), new Claim(ClaimTypes.Role, $"{user.Role + user.Status}") };
-            JwtSecurityToken JWT = new JwtSecurityToken(issuer: AuthenticationOptions.ISSUER, audience: AuthenticationOptions.AUDIENCE, claims: claims, expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(2)),
+            List<Claim> claims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, targetUser.Login),
+                new Claim(ClaimTypes.Role, $"{targetUser.Role + targetUser.Status}")
+            };
+
+            JwtSecurityToken JWT = new JwtSecurityToken(
+                issuer: AuthenticationOptions.ISSUER,
+                audience: AuthenticationOptions.AUDIENCE,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(TimeSpan.FromDays(30)),
                 signingCredentials: new SigningCredentials(AuthenticationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
             string encodedJWT = new JwtSecurityTokenHandler().WriteToken(JWT);
 
-            return Results.Json(new { Login = user.Login, AuthorizationToken = encodedJWT });
+            return Results.Json(new
+            {
+                UserId = targetUser.UserId,
+                Login = targetUser.Login,
+                Role = targetUser.Role,
+                Status = targetUser.Status,
+                AuthorizationToken = encodedJWT
+            });
         }
         public IResult AuthenticationLoginPlayer(eco_questContext db, LoginPlayerDTO request)
         {
             Console.WriteLine("==========/authentication/login/player==========");
-            /*
-            Game? game = (from g in db.Games where g.GameId == request.GameId select g).FirstOrDefault();
 
-            if (game == null)
+            DeleteExpiredGames(db);
+
+            (bool, IResult) validResult = RequestValidator.ValidateLoginPlayerDTO(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == request.GameId
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+
+            List<Claim> claims = new List<Claim>()
             {
-                return Results.NotFound("Запраиваемая игра не существует");
-            }
-            */
-            List<Claim> claims = new List<Claim>() { new Claim(ClaimTypes.Name, request.Login), new Claim(ClaimTypes.Role, "player") };
-            JwtSecurityToken JWT = new JwtSecurityToken(issuer: AuthenticationOptions.ISSUER, audience: AuthenticationOptions.AUDIENCE, claims: claims, expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(2)),
+                new Claim(ClaimTypes.Name, request.Login),
+                new Claim(ClaimTypes.Role, "player")
+            };
+
+            JwtSecurityToken JWT = new JwtSecurityToken(
+                issuer: AuthenticationOptions.ISSUER,
+                audience: AuthenticationOptions.AUDIENCE,
+                claims: claims,
+                expires: DateTime.UtcNow.Add(TimeSpan.FromDays(30)),
                 signingCredentials: new SigningCredentials(AuthenticationOptions.GetSymmetricSecurityKey(), SecurityAlgorithms.HmacSha256));
+
             string encodedJWT = new JwtSecurityTokenHandler().WriteToken(JWT);
 
-            return Results.Json(new { GameId = request.GameId, Login = request.Login, AuthorizationToken = encodedJWT });
+            return Results.Json(new
+            {
+                GameId = request.GameId,
+                Login = request.Login,
+                Role = "player",
+                AuthorizationToken = encodedJWT
+            });
         }
 
-        public IResult BoardCreate(eco_questContext db, GameBoardDTO<ProductFoBoardRequestDTO> request)
+        public IResult GameCreate(eco_questContext db, Game request)
         {
-            Console.WriteLine("==========/board/create==========");
+            Console.WriteLine("==========/game/create==========");
 
-            GameBoard newGameBoard = new GameBoard() { Name = request.Name, NumFields = request.NumFields };
+            DeleteExpiredGames(db);
+
+            (bool, IResult) validResult = RequestValidator.ValidateGameModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            List<long> allGameIds = (from g in db.Games
+                                     select g.GameId).ToList();
+
+            long gameId = 0;
+
+            for (int id = 1; id <= 99999; id++)
+            {
+                if (!allGameIds.Contains(id))
+                {
+                    gameId = id;
+                    break;
+                }
+            }
+
+            if (gameId == 0)
+                return Results.BadRequest("Пул игр переполнен");
+
+            Game newGame = new Game()
+            {
+                GameId = gameId,
+                UserId = request.UserId,
+                Name = request.Name,
+                Message = request.Message,
+                Date = request.Date,
+                State = request.State,
+                CurrentQuestionId = request.CurrentQuestionId,
+            };
+
+            db.Games.Add(newGame);
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult GameDeleteId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/game/delete/{id:long}==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == id
+                                select g).FirstOrDefault();
+
+            if (targetGame != null)
+                db.Games.Remove(targetGame);
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult GameGetId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/game/get/{id:long}==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == id
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+
+            Question? targetQuestion = (from q in db.Questions
+                                        where q.QuestionId == targetGame.CurrentQuestionId
+                                        select q).FirstOrDefault();
+
+            return Results.Json(new
+            {
+                GameId = targetGame.GameId,
+                UserId = targetGame.UserId,
+                Name = targetGame.Name,
+                Message = targetGame.Message,
+                Date = targetGame.Date,
+                State = targetGame.State,
+                CurrentQuestionId = targetGame.CurrentQuestionId,
+                CurrentQuestionAnswer = targetQuestion == null ? null : targetQuestion.Answers
+            });
+        }
+        public IResult GameGetAll(eco_questContext db)
+        {
+            Console.WriteLine("==========/game/get/all==========");
+
+            DeleteExpiredGames(db);
+
+            List<Game> allGames = db.Games.ToList();
+
+            foreach (var game in allGames)
+            {
+                game.State = null;
+                game.CurrentQuestionId = null;
+            }
+
+            return Results.Json(allGames.OrderBy(x => x.GameId));
+        }
+        public IResult GameGetAllId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/game/get/all/{id:long}==========");
+
+            DeleteExpiredGames(db);
+
+            User? targetUser = (from u in db.Users.Include(x => x.Games)
+                                where u.UserId == id
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
+            if (!(targetUser.Role == "master" && targetUser.Status == "active"))
+                return Results.BadRequest("Запрашиваемый пользователь не является активным ведущим");
+
+            foreach (var game in targetUser.Games)
+            {
+                game.State = null;
+                game.CurrentQuestionId = null;
+                game.User = null;
+            }
+
+            return Results.Json(targetUser.Games.OrderBy(x => x.GameId));
+        }
+        public IResult GameUpdate(eco_questContext db, Game request)
+        {
+            Console.WriteLine("==========/game/update==========");
+
+            DeleteExpiredGames(db);
+
+            (bool, IResult) validResult = RequestValidator.ValidateGameModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == request.GameId
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+
+            if (targetGame == null)
+            {
+                GameDeleteId(db, request.GameId);
+                return GameCreate(db, request);
+            }
+
+            targetGame.UserId = request.UserId;
+            targetGame.Name = request.Name;
+            targetGame.Message = request.Message;
+            targetGame.Date = request.Date;
+            targetGame.State = request.State;
+            targetGame.CurrentQuestionId = request.CurrentQuestionId;
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult GameUpdateStateAndQuestion(eco_questContext db, Game request)
+        {
+            Console.WriteLine("==========/game/update/stateAndQuestion==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == request.GameId
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+
+            targetGame.State = request.State;
+            targetGame.CurrentQuestionId = request.CurrentQuestionId;
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+
+        public IResult GameBoardCreate(eco_questContext db, GameBoard request)
+        {
+            Console.WriteLine("==========/gameBoard/create==========");
+
+            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            GameBoard newGameBoard = new GameBoard()
+            {
+                Name = request.Name,
+                NumFields = request.NumFields,
+                UserId = request.UserId,
+            };
+
+            foreach (var gameBoardsProduct in request.GameBoardsProducts)
+            {
+                GameBoardsProduct newGameBoardsProduct = new GameBoardsProduct()
+                {
+                    ProductId = gameBoardsProduct.ProductId,
+                    NumOfRepeating = gameBoardsProduct.NumOfRepeating
+                };
+
+                newGameBoard.GameBoardsProducts.Add(newGameBoardsProduct);
+            }
+
+            List<Question> allQuestions = db.Questions.ToList();
+
+            foreach (var gameBoardsQuestion in request.Questions)
+            {
+                Question? targetQuestion = (from q in allQuestions
+                                            where q.QuestionId == gameBoardsQuestion.QuestionId
+                                            select q).FirstOrDefault();
+
+                if (targetQuestion != null)
+                    newGameBoard.Questions.Add(targetQuestion);
+            }
 
             db.GameBoards.Add(newGameBoard);
 
             db.SaveChanges();
 
-            GameBoard? addedGameBoard = (from gb in db.GameBoards where gb.Name == newGameBoard.Name select gb).FirstOrDefault();
+            return Results.Ok();
+        }
+        public IResult GameBoardDeleteId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/gameBoard/delete/{id:long}==========");
 
-            if (addedGameBoard == null)
-            {
-                return Results.StatusCode(500);
-            }
+            GameBoard? targetGameBoard = (from gb in db.GameBoards
+                                          where gb.GameBoardId == id
+                                          select gb).FirstOrDefault();
 
-            foreach (var product in request.Products)
-            {
-                foreach (var questionId in product.QuestionIds)
-                {
-                    db.GameBoardsQuestions.Add(new GameBoardsQuestion() { GameBoardId = addedGameBoard.Id, QuestionId = questionId });
-                }
-            }
-
-            foreach (var product in request.Products)
-            {
-                db.ProductsForBoards.Add(new ProductsForBoard() { GameBoardId = addedGameBoard.Id, ProductId = product.ProductId, NumOfRepeating = product.NumberOfRepeating });
-            }
+            if (targetGameBoard != null)
+                db.GameBoards.Remove(targetGameBoard);
 
             db.SaveChanges();
 
             return Results.Ok();
         }
-        public IResult BoardDeleteId(eco_questContext db, long id)
+        public IResult GameBoardGetId(eco_questContext db, long id)
         {
-            Console.WriteLine("==========/board/delete/{id:long}==========");
+            Console.WriteLine("==========/gameBoard/get/{id:long}==========");
 
-            List<GameBoard> targetGameBoards = (from gb in db.GameBoards where gb.Id == id select gb).ToList();
-            List<GameBoardsQuestion> targetGameBoardsQuestions = (from q in db.GameBoardsQuestions where q.GameBoardId == id select q).ToList();
-            List<ProductsForBoard> targetProductsForBoards = (from p in db.ProductsForBoards where p.GameBoardId == id select p).ToList();
-
-            db.GameBoards.RemoveRange(targetGameBoards);
-            db.GameBoardsQuestions.RemoveRange(targetGameBoardsQuestions);
-            db.ProductsForBoards.RemoveRange(targetProductsForBoards);
-
-            db.SaveChanges();
-
-            return Results.Ok();
-        }
-        public IResult BoardGetId(eco_questContext db, long id)
-        {
-            Console.WriteLine("==========/board/get/{id:long}==========");
-
-            GameBoard? targetGameBoard = (from gb in db.GameBoards where gb.Id == id select gb).FirstOrDefault();
+            GameBoard? targetGameBoard = (from gb in db.GameBoards.Include(x => x.GameBoardsProducts).ThenInclude(y => y.Product).Include(z => z.Questions)
+                                          where gb.GameBoardId == id
+                                          select gb).FirstOrDefault();
 
             if (targetGameBoard == null)
-            {
                 return Results.NotFound("Запрашиваемый шаблон не найден");
+
+            foreach (var gameBoardsProduct in targetGameBoard.GameBoardsProducts)
+            {
+                List<Question> targetQuestions = (from q in targetGameBoard.Questions
+                                                  where q.ProductId == gameBoardsProduct.ProductId
+                                                  select q).ToList();
+
+                foreach (var question in targetQuestions)
+                    gameBoardsProduct.Product.Questions.Add(question);
             }
 
-            GameBoardDTO<ProductForBoardResponseDTO> response = new GameBoardDTO<ProductForBoardResponseDTO>()
+            return Results.Json(targetGameBoard, new JsonSerializerOptions()
             {
-                Id = targetGameBoard.Id,
-                Name = targetGameBoard.Name,
-                NumFields = targetGameBoard.NumFields
-            };
-
-            List<ProductsForBoard> targetProductsForBoards = (from p in db.ProductsForBoards where p.GameBoardId == id select p).ToList();
-
-            foreach (var product in targetProductsForBoards)
-            {
-                Product? targetProduct = (from p in db.Products where p.Id == product.ProductId select p).FirstOrDefault();
-
-                if (targetProduct != null)
-                {
-                    List<long> targetGameBoardsQuestionsIds = (from q in db.GameBoardsQuestions where q.GameBoardId == id select q.QuestionId).ToList();
-                    List<Question> targetProductQuestoins = (from q in db.Questions where q.ProductId == product.ProductId select q).ToList();
-                    List<Question> targetQuestions = (from q in targetProductQuestoins where targetGameBoardsQuestionsIds.Contains(q.Id) select q).ToList();
-
-                    ProductForBoardResponseDTO productForBoardResponse = new ProductForBoardResponseDTO()
-                    {
-                        Id = product.ProductId,
-                        Name = targetProduct.Name,
-                        Colour = targetProduct.Colour,
-                        NumOfRepeating = product.NumOfRepeating
-                    };
-
-                    foreach (var question in targetQuestions)
-                    {
-                        productForBoardResponse.Questions.Add(question);
-                    }
-
-                    response.Products.Add(productForBoardResponse);
-                }
-            }
-
-            return Results.Json(response);
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                WriteIndented = true
+            });
         }
-        public IResult BoardGetAll(eco_questContext db)
+        public IResult GameBoardGetAll(eco_questContext db)
         {
-            Console.WriteLine("==========/board/getAll==========");
+            Console.WriteLine("==========/gameBoard/get/all==========");
 
             List<GameBoard> allGameBoards = db.GameBoards.ToList();
 
-            return Results.Json(allGameBoards);
+            return Results.Json(allGameBoards.OrderBy(x => x.GameBoardId));
         }
-        public IResult BoardUpdate(eco_questContext db, GameBoardDTO<ProductFoBoardRequestDTO> request)
+        public IResult GameBoardGetAllId(eco_questContext db, long id)
         {
-            Console.WriteLine("==========/board/update==========");
+            Console.WriteLine("==========/gameBoard/get/all/{id:long}==========");
 
-            GameBoard? targetGameBoard = (from gb in db.GameBoards where gb.Id == request.Id select gb).FirstOrDefault();
+            User? targetUser = (from u in db.Users.Include(x => x.GameBoards)
+                                where u.UserId == id
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
+            if (!(targetUser.Role == "master" && targetUser.Status == "active"))
+                return Results.BadRequest("Запрашиваемый пользователь не является активным ведущим");
+
+            foreach (var gameBoard in targetUser.GameBoards)
+                gameBoard.User = null;
+
+            return Results.Json(targetUser.GameBoards.OrderBy(x => x.GameBoardId));
+        }
+        public IResult GameBoardShareFromUserIdGameBoardIdToUserId(eco_questContext db, long fromUserId, long gameBoardId, long toUserId)
+        {
+            Console.WriteLine("==========/gameBoard/share/{fromUserId:long}/{gameBoardId:long}/{toUserId:long}==========");
+
+            User? targetFromUser = (from u in db.Users
+                                    where u.UserId == fromUserId
+                                    select u).FirstOrDefault();
+
+            if (targetFromUser == null)
+                return Results.NotFound("Запрашиваемый пользователь адресант не найден");
+            if (!(targetFromUser.Role == "master" && targetFromUser.Status == "active"))
+                return Results.BadRequest("Запрашиваемый пользователь адресант не является активным ведущим");
+
+            GameBoard? targetGameBoard = (from gb in db.GameBoards.Include(x => x.GameBoardsProducts).Include(y => y.Questions)
+                                          where gb.GameBoardId == gameBoardId
+                                          select gb).FirstOrDefault();
 
             if (targetGameBoard == null)
+                return Results.NotFound("Запрашиваемый шаблон не найден");
+            if (targetGameBoard.UserId != targetFromUser.UserId)
+                return Results.BadRequest("Запрашиваемый шаблон не связан с запрашиваемым пользователем адресантом");
+
+            User? targetToUser = (from u in db.Users
+                                  where u.UserId == toUserId
+                                  select u).FirstOrDefault();
+
+            if (targetToUser == null)
+                return Results.NotFound("Запрашиваемый пользователь адресат не найден");
+            if (!(targetToUser.Role == "master" && targetToUser.Status == "active"))
+                return Results.BadRequest("Запрашиваемый пользователь адресат не является активным ведущим");
+            if (targetFromUser.UserId == targetToUser.UserId)
+                return Results.BadRequest("Нельзя поделиться шаблоном с самим собой");
+
+            GameBoard newGameBoard = new GameBoard()
             {
-                BoardDeleteId(db, request.Id);
-                return BoardCreate(db, request);
-            }
+                Name = targetGameBoard.Name,
+                NumFields = targetGameBoard.NumFields,
+                UserId = targetToUser.UserId,
+            };
 
-            List<GameBoardsQuestion> targetGameBoardsQuestions = (from q in db.GameBoardsQuestions where q.GameBoardId == request.Id select q).ToList();
-            List<ProductsForBoard> targetProductsForBoards = (from p in db.ProductsForBoards where p.GameBoardId == request.Id select p).ToList();
-
-            db.GameBoardsQuestions.RemoveRange(targetGameBoardsQuestions);
-            db.ProductsForBoards.RemoveRange(targetProductsForBoards);
-
-            db.SaveChanges();
-
-            targetGameBoard.Name = request.Name;
-            targetGameBoard.NumFields = request.NumFields;
-
-            List<GameBoardsQuestion> gameBoardsQuestions = new List<GameBoardsQuestion>();
-            List<ProductsForBoard> productsForBoards = new List<ProductsForBoard>();
-
-            foreach (var product in request.Products)
+            foreach (var gameBoardsProduct in targetGameBoard.GameBoardsProducts)
             {
-                foreach (var questionId in product.QuestionIds)
+                GameBoardsProduct newGameBoardsProduct = new GameBoardsProduct()
                 {
-                    gameBoardsQuestions.Add(new GameBoardsQuestion { GameBoardId = request.Id, QuestionId = questionId });
-                }
-            }
-            foreach (var product in request.Products)
-            {
-                productsForBoards.Add(new ProductsForBoard() { GameBoardId = request.Id, ProductId = product.ProductId, NumOfRepeating = product.NumberOfRepeating });
+                    ProductId = gameBoardsProduct.ProductId,
+                    NumOfRepeating = gameBoardsProduct.NumOfRepeating
+                };
+
+                newGameBoard.GameBoardsProducts.Add(newGameBoardsProduct);
             }
 
-            db.GameBoardsQuestions.AddRange(gameBoardsQuestions);
-            db.ProductsForBoards.AddRange(productsForBoards);
+            List<Question> allQuestions = db.Questions.ToList();
+
+            foreach (var gameBoardsQuestion in targetGameBoard.Questions)
+            {
+                Question? targetQuestion = (from q in allQuestions
+                                            where q.QuestionId == gameBoardsQuestion.QuestionId
+                                            select q).FirstOrDefault();
+
+                if (targetQuestion != null)
+                    newGameBoard.Questions.Add(targetQuestion);
+            }
+
+            db.GameBoards.Add(newGameBoard);
 
             db.SaveChanges();
 
             return Results.Ok();
         }
-
-        public IResult GameGetAnswer(eco_questContext db)
+        public IResult GameBoardUpdate(eco_questContext db, GameBoard request)
         {
-            Console.WriteLine("==========/game/getAnswer==========");
+            Console.WriteLine("==========/gameBoard/update==========");
 
-            Session? session = (from s in db.Sessions select s).FirstOrDefault();
+            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, request);
 
-            if (session == null)
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            GameBoard? targetGameBoard = (from gb in db.GameBoards.Include(x => x.GameBoardsProducts).Include(y => y.Questions)
+                                          where gb.GameBoardId == request.GameBoardId
+                                          select gb).FirstOrDefault();
+
+            if (targetGameBoard == null)
             {
-                return Results.NotFound("Запрашиваемая сессия не найдена");
+                GameBoardDeleteId(db, request.GameBoardId);
+                return GameBoardCreate(db, request);
             }
 
-            Question? question = (from q in db.Questions where q.Id == session.IdCurrentQuestion select q).FirstOrDefault();
+            targetGameBoard.Name = request.Name;
+            targetGameBoard.NumFields = request.NumFields;
+            targetGameBoard.UserId = request.UserId;
 
-            if (question == null)
+            targetGameBoard.GameBoardsProducts.Clear();
+            targetGameBoard.Questions.Clear();
+
+            db.SaveChanges();
+
+            foreach (var gameBoardsProduct in request.GameBoardsProducts)
             {
-                return Results.NotFound("Запрашиваемый вопрос не найден");
+                GameBoardsProduct newGameBoardsProduct = new GameBoardsProduct()
+                {
+                    GameBoardId = gameBoardsProduct.GameBoardId,
+                    ProductId = gameBoardsProduct.ProductId,
+                    NumOfRepeating = gameBoardsProduct.NumOfRepeating
+                };
+
+                targetGameBoard.GameBoardsProducts.Add(newGameBoardsProduct);
             }
 
-            return Results.Json(new { Answer = question.Answer, Question = question.Text });
-        }
-        public IResult GameSetQuestion(eco_questContext db, SetQuestionDTO request)
-        {
-            Console.WriteLine("==========/game/setQuestion==========");
+            List<Question> allQuestions = db.Questions.ToList();
 
-            Session? session = (from s in db.Sessions select s).FirstOrDefault();
-
-            if (session == null)
+            foreach (var gameBoardsQuestion in request.Questions)
             {
-                return Results.NotFound("Запрашиваемая сессия не найдена");
-            }
+                Question? targetQuestion = (from q in allQuestions
+                                            where q.QuestionId == gameBoardsQuestion.QuestionId
+                                            select q).FirstOrDefault();
 
-            session.IdCurrentQuestion = request.QuestionId;
+                if (targetQuestion != null)
+                    targetGameBoard.Questions.Add(targetQuestion);
+            }
 
             db.SaveChanges();
 
@@ -242,27 +536,244 @@ namespace EcoQuest
         {
             Console.WriteLine("==========/product/create==========");
 
-            db.Products.Add(request);
+            (bool, IResult) validResult = RequestValidator.ValidateProductModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            Product newProduct = new Product()
+            {
+                Colour = request.Colour,
+                Name = request.Name,
+                Round = request.Round,
+                Logo = request.Logo
+            };
+
+            foreach (var question in request.Questions)
+            {
+                Question newQuestion = new Question()
+                {
+                    Answers = question.Answers,
+                    Type = question.Type,
+                    ShortText = question.ShortText,
+                    Text = question.Text,
+                    Media = question.Media,
+                    LastEditDate = question.LastEditDate,
+                };
+
+                if (newQuestion.Type != "MEDIA")
+                    newQuestion.Media = null;
+                newQuestion.LastEditDate = DateTime.Now.ToString();
+
+                newProduct.Questions.Add(newQuestion);
+            }
+
+            db.Products.Add(newProduct);
 
             db.SaveChanges();
 
             return Results.Ok();
         }
+        public IResult ProductExport(eco_questContext db, ProductExportDTO request)
+        {
+            Console.WriteLine("==========/product/export==========");
+
+            (bool, IResult) validResult = RequestValidator.ValidateProductExportDTO(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            List<Product> targetProducts;
+
+            if (request.ProductIds.Count == 0)
+            {
+                targetProducts = db.Products.OrderBy(x => x.ProductId).Include(y => y.Questions.OrderBy(z => z.QuestionId)).ToList();
+            }
+            else
+            {
+                targetProducts = (from p in db.Products.OrderBy(x => x.ProductId).Include(y => y.Questions.OrderBy(z => z.QuestionId))
+                                  where request.ProductIds.Contains(p.ProductId)
+                                  select p).ToList();
+            }
+
+            XLWorkbook workbook = new XLWorkbook();
+
+            int row = 1;
+
+            foreach (var product in targetProducts)
+            {
+                IXLWorksheet worksheet = workbook.Worksheets.Add(product.Name);
+
+                worksheet.Cell("A" + row).Value = "Продукт";
+
+                worksheet.Range($"A{row}:E{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+
+                worksheet.Range($"A{row}:E{row}").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Range($"A{row}:E{row}").Merge();
+
+                row++;
+
+                worksheet.Cell("A" + row).Value = "ID продукта";
+                worksheet.Cell("B" + row).Value = "Название";
+                worksheet.Cell("C" + row).Value = "Цвет";
+                worksheet.Cell("D" + row).Value = "Логотип";
+                worksheet.Cell("E" + row).Value = "Раунд";
+
+                worksheet.Range($"A{row}:E{row}").Style.Fill.BackgroundColor = XLColor.Green;
+
+                worksheet.Range($"A{row}:E{row}").Style.Font.FontColor = XLColor.White;
+
+                row++;
+
+                worksheet.Cell("A" + row).Value = product.ProductId;
+                worksheet.Cell("B" + row).Value = product.Name;
+                worksheet.Cell("C" + row).Value = product.Colour;
+                worksheet.Cell("D" + row).Value = product.Logo;
+                worksheet.Cell("E" + row).Value = product.Round;
+
+                worksheet.Range($"A{row}:E{row}").Style.Fill.BackgroundColor = XLColor.LightGreen;
+
+                row++;
+                row++;
+
+                worksheet.Cell("A" + row).Value = "Вопросы";
+
+                worksheet.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+
+                worksheet.Range($"A{row}:H{row}").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Range($"A{row}:H{row}").Merge();
+
+                row++;
+
+                worksheet.Cell("A" + row).Value = "ID продукта";
+                worksheet.Cell("B" + row).Value = "ID вопроса";
+                worksheet.Cell("C" + row).Value = "Категория";
+                worksheet.Cell("D" + row).Value = "Краткое обозначение";
+                worksheet.Cell("E" + row).Value = "Формулировка";
+                worksheet.Cell("F" + row).Value = "Варианты ответов";
+                worksheet.Cell("G" + row).Value = "Медиа";
+                worksheet.Cell("H" + row).Value = "Дата последнего редактирования";
+
+                worksheet.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = XLColor.Green;
+
+                worksheet.Range($"A{row}:H{row}").Style.Font.FontColor = XLColor.White;
+
+                row++;
+
+                QuestionAnswersDTO? questionAnswersDTO;
+
+                foreach (var question in product.Questions)
+                {
+                    string? answers = question.Answers;
+
+                    try
+                    {
+                        questionAnswersDTO = JsonSerializer.Deserialize<QuestionAnswersDTO>(answers);
+
+                        if (questionAnswersDTO == null)
+                            questionAnswersDTO = new QuestionAnswersDTO();
+
+                        List<string> allAnswers = questionAnswersDTO.AllAnswers.ToList();
+                        List<string> correctAnswers = questionAnswersDTO.CorrectAnswers.ToList();
+
+                        for (int i = 0; i < allAnswers.Count; i++)
+                        {
+                            if (correctAnswers.Contains(allAnswers[i]))
+                                allAnswers[i] = allAnswers[i].Insert(0, "[(*)");
+                            else
+                                allAnswers[i] = allAnswers[i].Insert(0, "[");
+                            allAnswers[i] = allAnswers[i].Insert(allAnswers[i].Length, "]");
+                        }
+
+                        answers = string.Join(';', allAnswers);
+                    }
+                    catch { }
+
+                    worksheet.Cell("A" + row).Value = question.ProductId;
+                    worksheet.Cell("B" + row).Value = question.QuestionId;
+                    worksheet.Cell("C" + row).Value = question.Type;
+                    worksheet.Cell("D" + row).Value = question.ShortText;
+                    worksheet.Cell("E" + row).Value = question.Text;
+                    worksheet.Cell("F" + row).Value = answers;
+                    worksheet.Cell("G" + row).Value = question.Media;
+                    worksheet.Cell("H" + row).Value = question.LastEditDate;
+
+                    worksheet.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = XLColor.LightGreen;
+
+                    row++;
+                }
+
+                if (row > 1)
+                {
+                    worksheet.Range($"A1:H{row - 1}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    worksheet.Range($"A1:H{row - 1}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                    worksheet.Range($"A1:H{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                    worksheet.Range($"A1:H{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                }
+
+                row = 1;
+
+                worksheet.Cell("J1").Value = "Справочник категорий вопросов";
+                worksheet.Cell("J1").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+                worksheet.Cell("J1").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Cell("J2").Style.Fill.BackgroundColor = XLColor.Green;
+                worksheet.Cell("J2").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Cell("J3").Value = "TEXT - Без выбора ответа";
+                worksheet.Cell("J4").Value = "TEXT_WITH_ANSWERS - С выбором ответа";
+                worksheet.Cell("J5").Value = "AUCTION - Вопрос-аукцион";
+                worksheet.Cell("J6").Value = "MEDIA - Вопрос с медиа фрагментом";
+                worksheet.Range($"J3:J6").Style.Fill.BackgroundColor = XLColor.LightGreen;
+
+                worksheet.Range($"J1:J6").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                worksheet.Range($"J1:J6").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                worksheet.Range($"J1:J6").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Range($"J1:J6").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+
+
+                worksheet.Cell("J8").Value = "Шаблон вариантов ответа";
+                worksheet.Cell("J8").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+                worksheet.Cell("J8").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Cell("J9").Style.Fill.BackgroundColor = XLColor.Green;
+                worksheet.Cell("J9").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Cell("J10").Value = "[Неверный ответ];[(*)Верный ответ];[Неверный ответ]";
+                worksheet.Cell("J10").Style.Fill.BackgroundColor = XLColor.LightGreen;
+
+                worksheet.Range($"J8:J10").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                worksheet.Range($"J8:J10").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+                worksheet.Range($"J8:J10").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Range($"J8:J10").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+
+
+                worksheet.Columns().AdjustToContents();
+            }
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                workbook.SaveAs(stream);
+                return Results.File(stream.ToArray(), "Products.xlsx");
+            }
+        }
         public IResult ProductDeleteId(eco_questContext db, long id)
         {
             Console.WriteLine("==========/product/delete/{id:long}==========");
 
-            List<Product> targetProducts = (from p in db.Products where p.Id == id select p).ToList();
-            List<Question> targetQuestions = (from q in db.Questions where q.ProductId == id select q).ToList();
-            List<ProductsForBoard> targetProductsForBoards = (from p in db.ProductsForBoards where p.ProductId == id select p).ToList();
+            Product? targetProduct = (from p in db.Products
+                                      where p.ProductId == id
+                                      select p).FirstOrDefault();
 
-            List<long> targetQuestionIds = (from q in targetQuestions select q.Id).ToList();
-            List<GameBoardsQuestion> targetGameBoardsQuestions = (from q in db.GameBoardsQuestions where targetQuestionIds.Contains(q.QuestionId) select q).ToList();
-
-            db.Products.RemoveRange(targetProducts);
-            db.Questions.RemoveRange(targetQuestions);
-            db.ProductsForBoards.RemoveRange(targetProductsForBoards);
-            db.GameBoardsQuestions.RemoveRange(targetGameBoardsQuestions);
+            if (targetProduct != null)
+                db.Products.Remove(targetProduct);
 
             db.SaveChanges();
 
@@ -270,72 +781,269 @@ namespace EcoQuest
         }
         public IResult ProductGetAll(eco_questContext db)
         {
-            Console.WriteLine("==========/product/getAll==========");
+            Console.WriteLine("==========/product/get/all==========");
 
-            List<Product> allProducts = db.Products.ToList();
-            List<Question> allQuestions = db.Questions.ToList();
+            List<Product> allProducts = db.Products.Include(x => x.Questions).ToList();
 
             foreach (var product in allProducts)
             {
-                List<Question> targetQuestions = (from q in allQuestions where q.ProductId == product.Id select q).ToList();
-
-                foreach (var targetQuestion in targetQuestions)
-                {
-                    product.Questions.Add(targetQuestion);
-                }
+                foreach (var question in product.Questions)
+                    question.Product = null;
             }
 
-            return Results.Json(allProducts);
+            return Results.Json(allProducts.OrderBy(x => x.ProductId));
         }
         public IResult ProductGetAllRound(eco_questContext db, int round)
         {
-            Console.WriteLine("==========/product/getAll/{round:int}==========");
+            Console.WriteLine("==========/product/get/all/{round:int}==========");
 
-            List<Product> targetProducts = (from p in db.Products where p.Round == round select p).ToList();
+            List<Product> targetProducts = db.Products.Where(x => x.Round == round).Include(y => y.Questions).ToList();
 
-            List<Question> allQuestions = db.Questions.ToList();
-
-            foreach (var targetProduct in targetProducts)
+            foreach (var product in targetProducts)
             {
-                List<Question> targetQuestions = (from q in allQuestions where q.ProductId == targetProduct.Id select q).ToList();
+                foreach (var question in product.Questions)
+                    question.Product = null;
+            }
 
-                foreach (var targetQuestion in targetQuestions)
+            return Results.Json(targetProducts.OrderBy(x => x.ProductId));
+        }
+        public IResult ProductImport(eco_questContext db, HttpRequest request)
+        {
+            Console.WriteLine("==========/product/import==========");
+
+            IFormFile? file = request.Form.Files.FirstOrDefault();
+
+            if (file == null)
+                return Results.BadRequest("Файл не загружен");
+
+            using (Stream stream = file.OpenReadStream())
+            {
+                XLWorkbook workbook = new XLWorkbook(stream);
+
+                QuestionAnswersDTO questionAnswersDTO;
+
+                foreach (var worksheet in workbook.Worksheets)
                 {
-                    targetProduct.Questions.Add(targetQuestion);
+                    long productId1;
+                    bool productId1ParsingResult = long.TryParse(worksheet.Cell("A3").Value.ToString(), out productId1);
+                    if (!productId1ParsingResult)
+                        productId1 = 0;
+
+                    string? name = worksheet.Cell("B3").Value.ToString();
+                    string? colour = worksheet.Cell("C3").Value.ToString();
+                    string? logo = worksheet.Cell("D3").Value.ToString();
+
+                    int round;
+                    bool roundParsingResult = int.TryParse(worksheet.Cell("E3").Value.ToString(), out round);
+                    if (!roundParsingResult)
+                        round = 0;
+
+                    Product newProduct = new Product()
+                    {
+                        ProductId = productId1,
+                        Colour = colour,
+                        Name = name,
+                        Round = round,
+                        Logo = null
+                    };
+
+                    int row = 7;
+
+                    bool IsRowEmpty(IXLWorksheet worksheet, int row)
+                    {
+                        bool isRowEmpty = true;
+
+                        char[] columns = new char[] { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
+
+                        foreach (var column in columns)
+                        {
+                            if (!String.IsNullOrEmpty(worksheet.Cell($"{column}{row}").Value.ToString()))
+                            {
+                                isRowEmpty = false;
+                                break;
+                            }
+                        }
+
+                        return isRowEmpty;
+                    }
+
+                    while (!IsRowEmpty(worksheet, row))
+                    {
+                        long productId2;
+                        bool productId2ParsingResult = long.TryParse(worksheet.Cell("A" + row).Value.ToString(), out productId2);
+                        if (!productId2ParsingResult)
+                            productId2 = 0;
+
+                        long questionId;
+                        bool questionIdParsingResult = long.TryParse(worksheet.Cell("B" + row).Value.ToString(), out questionId);
+                        if (!questionIdParsingResult)
+                            questionId = 0;
+
+                        string? type = worksheet.Cell("C" + row).Value.ToString();
+                        string? shortText = worksheet.Cell("D" + row).Value.ToString();
+                        string? text = worksheet.Cell("E" + row).Value.ToString();
+                        string? answers = worksheet.Cell("F" + row).Value.ToString();
+                        string? media = worksheet.Cell("G" + row).Value.ToString();
+                        string? lastEditDate = worksheet.Cell("H" + row).Value.ToString();
+
+                        if (answers != null)
+                        {
+                            questionAnswersDTO = new QuestionAnswersDTO();
+
+                            Regex allAnswersRegex = new Regex(@"\[[^]]+]");
+                            Regex correctAnswersRegex = new Regex(@"\[\(\*\)[^]]+]");
+
+                            MatchCollection allAnswersMatches = allAnswersRegex.Matches(answers);
+                            MatchCollection correctAnswersMatches = correctAnswersRegex.Matches(answers);
+
+                            questionAnswersDTO.AllAnswers = (from match in allAnswersMatches select match.Value.TrimStart('[').TrimEnd(']').Replace("(*)", "")).ToList();
+                            questionAnswersDTO.CorrectAnswers = (from match in correctAnswersMatches select match.Value.TrimStart('[').TrimEnd(']').Replace("(*)", "")).ToList();
+
+                            answers = JsonSerializer.Serialize(questionAnswersDTO);
+                        }
+
+                        Question newQuestion = new Question()
+                        {
+                            QuestionId = questionId,
+                            Answers = answers,
+                            Type = type,
+                            ShortText = shortText,
+                            Text = text,
+                            ProductId = productId2,
+                            Media = null,
+                            LastEditDate = lastEditDate
+                        };
+
+                        newProduct.Questions.Add(newQuestion);
+
+                        row++;
+                    }
+
+                    ProductUpdate(db, newProduct);
                 }
             }
 
-            return Results.Json(targetProducts);
+            return Results.Ok();
+        }
+        public IResult ProductLogoCreateId(eco_questContext db, HttpRequest request, long id)
+        {
+            Console.WriteLine("==========/product/logo/create/{id:long}==========");
+
+            Product? targetProduct = (from p in db.Products
+                                      where p.ProductId == id
+                                      select p).FirstOrDefault();
+
+            if (targetProduct == null)
+                return Results.NotFound("Запрашиваемый продукт не найден");
+            if (targetProduct.Logo != null)
+                return Results.BadRequest("У запрашиваемого продукта логотип уже существует");
+
+            IFormFile? file = request.Form.Files.FirstOrDefault();
+
+            if (file == null)
+                return Results.BadRequest("Файл не загружен");
+
+            string filePath = $"{_app.Configuration["SourcePath"]}logo{id}{Path.GetExtension(file.FileName)}";
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                file.CopyTo(fileStream);
+            }
+
+            targetProduct.Logo = filePath;
+
+            db.SaveChanges();
+            
+            return Results.Ok();
+        }
+        public IResult ProductLogoDeleteId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/product/logo/delete/{id:long}==========");
+
+            Product? targetProduct = (from p in db.Products
+                                      where p.ProductId == id
+                                      select p).FirstOrDefault();
+
+            if (targetProduct != null && targetProduct.Logo != null)
+            {
+                FileInfo? targetFile = (from f in new DirectoryInfo(_app.Configuration["SourcePath"]).GetFiles()
+                                        where f.Name == Path.GetFileName(targetProduct.Logo)
+                                        select f).FirstOrDefault();
+
+                if (targetFile != null)
+                    targetFile.Delete();
+
+                targetProduct.Logo = null;
+            }
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult ProductLogoUpdateId(eco_questContext db, HttpRequest request, long id)
+        {
+            Console.WriteLine("==========/product/logo/update/{id:long}==========");
+
+            ProductLogoDeleteId(db, id);
+            return ProductLogoCreateId(db, request, id);
         }
         public IResult ProductUpdate(eco_questContext db, Product request)
         {
             Console.WriteLine("==========/product/update==========");
 
-            Product? targetProduct = (from p in db.Products where p.Id == request.Id select p).FirstOrDefault();
+            (bool, IResult) validResult = RequestValidator.ValidateProductModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            Product? targetProduct = (from p in db.Products.Include(x => x.Questions)
+                                      where p.ProductId == request.ProductId
+                                      select p).FirstOrDefault();
 
             if (targetProduct == null)
             {
-                ProductDeleteId(db, request.Id);
+                ProductDeleteId(db, request.ProductId);
                 return ProductCreate(db, request);
             }
 
             targetProduct.Colour = request.Colour;
             targetProduct.Name = request.Name;
+            targetProduct.Round = request.Round;
+            targetProduct.Logo = request.Logo;
 
-            foreach (var updatedQuestion in request.Questions)
+            foreach (var question in request.Questions)
             {
-                Question? targetQuestion = (from q in targetProduct.Questions where q.Id == updatedQuestion.Id select q).FirstOrDefault();
+                Question? targetQuestion = (from q in targetProduct.Questions
+                                            where q.QuestionId == question.QuestionId
+                                            select q).FirstOrDefault();
 
                 if (targetQuestion == null)
                 {
-                    targetProduct.Questions.Add(updatedQuestion);
+                    Question newQuestion = new Question()
+                    {
+                        Answers = question.Answers,
+                        Type = question.Type,
+                        ShortText = question.ShortText,
+                        Text = question.Text,
+                        Media = question.Media,
+                        LastEditDate = question.LastEditDate,
+                    };
+
+                    newQuestion.LastEditDate = DateTime.Now.ToString();
+                    if (newQuestion.Type != "MEDIA") newQuestion.Media = null;
+
+                    targetProduct.Questions.Add(newQuestion);
                 }
                 else
                 {
-                    targetQuestion.Answer = updatedQuestion.Answer;
-                    targetQuestion.Type = updatedQuestion.Type;
-                    targetQuestion.ShortText = updatedQuestion.ShortText;
-                    targetQuestion.Text = updatedQuestion.Text;
+                    targetQuestion.Answers = question.Answers;
+                    targetQuestion.Type = question.Type;
+                    targetQuestion.ShortText = question.ShortText;
+                    targetQuestion.Text = question.Text;
+                    targetQuestion.LastEditDate = DateTime.Now.ToString();
+
+                    if (targetQuestion.Type != "MEDIA") targetQuestion.Media = null;
+                    else targetQuestion.Media = question.Media;
                 }
             }
 
@@ -348,27 +1056,226 @@ namespace EcoQuest
         {
             Console.WriteLine("==========/question/delete/{id:long}==========");
 
-            List<Question> targetQuestions = (from q in db.Questions where q.Id == id select q).ToList();
-            List<GameBoardsQuestion> targetGameBoardsQuestions = (from q in db.GameBoardsQuestions where q.QuestionId == id select q).ToList();
+            Question? targetQuestion = (from q in db.Questions
+                                        where q.QuestionId == id
+                                        select q).FirstOrDefault();
 
-            db.Questions.RemoveRange(targetQuestions);
-            db.GameBoardsQuestions.RemoveRange(targetGameBoardsQuestions);
+            if (targetQuestion != null)
+                db.Questions.Remove(targetQuestion);
 
             db.SaveChanges();
 
             return Results.Ok();
+        }
+        public IResult QuestionMediaCreateId(eco_questContext db, HttpRequest request, long id)
+        {
+            Console.WriteLine("==========/question/media/create/{id:long}==========");
+
+            Question? targetQuestion = (from q in db.Questions
+                                      where q.QuestionId == id
+                                      select q).FirstOrDefault();
+
+            if (targetQuestion == null)
+                return Results.NotFound("Запрашиваемый вопрос не найден");
+            if (targetQuestion.Type != "MEDIA")
+                return Results.BadRequest("Тип запрашиваемого вопроса не является 'медиа'");
+            if (targetQuestion.Media != null)
+                return Results.BadRequest("У запрашиваемого вопроса медиа уже существует");
+
+            IFormFile? file = request.Form.Files.FirstOrDefault();
+
+            if (file == null)
+                return Results.BadRequest("Файл не загружен");
+
+            string filePath = $"{_app.Configuration["SourcePath"]}media{id}{Path.GetExtension(file.FileName)}";
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                file.CopyTo(fileStream);
+            }
+
+            targetQuestion.Media = filePath;
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult QuestionMediaDeleteId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/question/media/delete/{id:long}==========");
+
+            Question? targetQuestion = (from q in db.Questions
+                                      where q.QuestionId == id
+                                      select q).FirstOrDefault();
+
+            if (targetQuestion != null && targetQuestion.Media != null)
+            {
+                FileInfo? targetFile = (from f in new DirectoryInfo(_app.Configuration["SourcePath"]).GetFiles()
+                                        where f.Name == Path.GetFileName(targetQuestion.Media)
+                                        select f).FirstOrDefault();
+
+                if (targetFile != null)
+                    targetFile.Delete();
+
+                targetQuestion.Media = null;
+            }
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult QuestionMediaUpdateId(eco_questContext db, HttpRequest request, long id)
+        {
+            Console.WriteLine("==========/question/media/update/{id:long}==========");
+
+            QuestionMediaDeleteId(db, id);
+            return QuestionMediaCreateId(db, request, id);
+        }
+
+        public IResult StatisticCreate(eco_questContext db, Statistic request)
+        {
+            Console.WriteLine("==========/statistic/create==========");
+
+            (bool, IResult) validResult = RequestValidator.ValidateStatisticModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            Statistic newRecord = new Statistic()
+            {
+                UserId = request.UserId,
+                LastName = request.LastName,
+                FirstName = request.FirstName,
+                Patronymic = request.Patronymic,
+                Login = request.Login,
+                Date = request.Date,
+                Duration = request.Duration,
+                Results = request.Results
+            };
+
+            db.Statistics.Add(newRecord);
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult StatisticExport(eco_questContext db, StatisticExportDTO request)
+        {
+            Console.WriteLine("==========/statistic/export==========");
+
+            List<Statistic> allRecords = db.Statistics.ToList();
+            List<(Statistic, DateTime, TimeSpan)> allRecordsDatesDurations = new List<(Statistic, DateTime, TimeSpan)>();
+
+            foreach (var record in allRecords)
+                allRecordsDatesDurations.Add((record, DateTime.Parse(record.Date), TimeSpan.Parse(record.Duration)));
+
+            DateTime startDate;
+            DateTime endDate;
+            TimeSpan startDuration;
+            TimeSpan endDuration;
+
+            bool startDateParsingResult = DateTime.TryParse(request.StartDate, out startDate);
+            bool endDateParsingResult = DateTime.TryParse(request.EndDate, out endDate);
+            bool startDurationParsingResult = TimeSpan.TryParse(request.StartDuration, out startDuration);
+            bool endDurationParsingResult = TimeSpan.TryParse(request.EndDuration, out endDuration);
+
+            if (!startDateParsingResult)
+                startDate = allRecordsDatesDurations.Min(x => x.Item2);
+            if (!endDateParsingResult)
+                endDate = allRecordsDatesDurations.Max(x => x.Item2);
+            if (!startDurationParsingResult)
+                startDuration = allRecordsDatesDurations.Min(x => x.Item3);
+            if (!endDurationParsingResult)
+                endDuration = allRecordsDatesDurations.Max(x => x.Item3);
+
+            if (!(startDate <= endDate))
+                return Results.BadRequest("Дата начала не может быть больше даты конца");
+            if (!(startDuration <= endDuration))
+                return Results.BadRequest("Продолжительность начала не может быть больше продолжительности конца");
+
+            List<Statistic> targetRecords = (from r in allRecordsDatesDurations
+                                             where (r.Item2 >= startDate && r.Item2 <= endDate) && (r.Item3 >= startDuration && r.Item3 <= endDuration)
+                                             orderby r.Item2, r.Item3
+                                             select r.Item1).ToList();
+
+            XLWorkbook workbook = new XLWorkbook();
+            IXLWorksheet worksheet = workbook.Worksheets.Add("Statistics");
+
+            int row = 1;
+
+            worksheet.Cell("B" + row).Value = "Дата проведения игры";
+            worksheet.Cell("C" + row).Value = "Продолжительность игры";
+            worksheet.Cell("D" + row).Value = "ФИО ведущего";
+            worksheet.Cell("E" + row).Value = "Логин ведущего";
+            worksheet.Cell("F" + row).Value = "Команда";
+            worksheet.Cell("G" + row).Value = "Игрок";
+            worksheet.Cell("H" + row).Value = "Очки";
+            worksheet.Cell("I" + row).Value = "Место";
+
+            worksheet.Range($"B{row}:I{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+
+            worksheet.Range($"B{row}:I{row}").Style.Font.FontColor = XLColor.White;
+
+            row++;
+
+            StatisticsResultsDTO? statisticsResultsDTO;
+
+            foreach (var record in targetRecords)
+            {
+                statisticsResultsDTO = JsonSerializer.Deserialize<StatisticsResultsDTO>(record.Results);
+                if (statisticsResultsDTO == null)
+                    statisticsResultsDTO = new StatisticsResultsDTO();
+
+                foreach (var team in statisticsResultsDTO.Teams)
+                {
+                    foreach (var player in team.Players)
+                    {
+                        worksheet.Cell("A" + row).Value = record.RecordId;
+                        worksheet.Cell("B" + row).Value = record.Date;
+                        worksheet.Cell("C" + row).Value = record.Duration;
+                        worksheet.Cell("D" + row).Value = $"{record.LastName} {record.FirstName} {record.Patronymic}";
+                        worksheet.Cell("E" + row).Value = record.Login;
+                        worksheet.Cell("F" + row).Value = team.Name;
+                        worksheet.Cell("G" + row).Value = player;
+                        worksheet.Cell("H" + row).Value = team.Score;
+                        worksheet.Cell("I" + row).Value = team.Place;
+
+                        row++;
+                    }
+                }
+            }
+
+            if (targetRecords.Count > 0)
+            {
+                worksheet.Range($"A2:A{row - 1}").Style.Fill.BackgroundColor = XLColor.LightGreen;
+                worksheet.Range($"B2:I{row - 1}").Style.Fill.BackgroundColor = XLColor.Green;
+
+                worksheet.Range($"B2:I{row - 1}").Style.Font.FontColor = XLColor.White;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                workbook.SaveAs(stream);
+                return Results.File(stream.ToArray(), "Statistics.xlsx");
+            }
         }
 
         public IResult UserCreate(eco_questContext db, User request)
         {
             Console.WriteLine("==========/user/create==========");
 
-            List<User> loginExists = (from u in db.Users where u.Login == request.Login select u).ToList();
+            (bool, IResult) validResult = RequestValidator.ValidateUserModel(db, request);
 
-            if (loginExists.Count > 0)
-            {
-                return Results.BadRequest("Логин уже существует");
-            }
+            if (!validResult.Item1)
+                return validResult.Item2;
 
             User newUser = new User()
             {
@@ -391,44 +1298,162 @@ namespace EcoQuest
         {
             Console.WriteLine("==========/user/delete/{id:long}==========");
 
-            List<User> targetUsers = (from u in db.Users where u.UserId == id select u).ToList();
+            DeleteExpiredGames(db);
 
-            db.Users.RemoveRange(targetUsers);
+            User? targetUser = (from u in db.Users
+                                where u.UserId == id
+                                select u).FirstOrDefault();
+
+            if (targetUser != null)
+                db.Users.Remove(targetUser);
+
             db.SaveChanges();
 
             return Results.Ok();
         }
         public IResult UserGetActiveMasters(eco_questContext db)
         {
-            Console.WriteLine("==========/user/getActiveMasters==========");
+            Console.WriteLine("==========/user/get/activeMasters==========");
 
-            return Results.Json((from u in db.Users where u.Role == "master" && u.Status == "active" select u).ToList());
+            List<User> targetUsers = (from u in db.Users
+                                      where u.Role == "master" && u.Status == "active"
+                                      select u).ToList();
+
+            foreach (var user in targetUsers)
+            {
+                user.Password = null;
+                user.Role = null;
+                user.Status = null;
+            }
+
+            return Results.Json(targetUsers.OrderBy(x => x.UserId));
         }
         public IResult UserGetInactiveMasters(eco_questContext db)
         {
-            Console.WriteLine("==========/user/getInactiveMasters==========");
+            Console.WriteLine("==========/user/get/inactiveMasters==========");
 
-            return Results.Json((from u in db.Users where u.Role == "master" && u.Status == "inactive" select u).ToList());
+            List<User> targetUsers = (from u in db.Users
+                                      where u.Role == "master" && u.Status == "inactive"
+                                      select u).ToList();
+
+            foreach (var user in targetUsers)
+            {
+                user.Password = null;
+                user.Role = null;
+                user.Status = null;
+            }
+
+            return Results.Json(targetUsers.OrderBy(x => x.UserId));
         }
         public IResult UserToActiveMasterId(eco_questContext db, long id)
         {
             Console.WriteLine("==========/user/toActiveMaster/{id:long}==========");
 
-            List<User> targetUsers = (from u in db.Users where u.UserId == id select u).ToList();
+            User? targetUser = (from u in db.Users
+                                where u.UserId == id
+                                select u).FirstOrDefault();
 
-            if (targetUsers.Count == 0)
-            {
+            if (targetUser == null)
                 return Results.NotFound("Запрашиваемый пользователь не найден");
-            }
+            if (targetUser.Role != "master")
+                return Results.BadRequest("Запрашиваемый пользователь не является ведущим");
+            if (targetUser.Status != "inactive")
+                return Results.BadRequest("Запрашиваемый пользователь не является неактивным");
 
-            foreach (var targetUser in targetUsers)
-            {
-                targetUser.Status = "active";
-            }
+            targetUser.Status = "active";
 
             db.SaveChanges();
 
             return Results.Ok();
+        }
+        public IResult UserToInactiveMasterId(eco_questContext db, long id)
+        {
+            Console.WriteLine("==========/user/toInactiveMaster/{id:long}==========");
+
+            User? targetUser = (from u in db.Users
+                                where u.UserId == id
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
+            if (targetUser.Role != "master")
+                return Results.BadRequest("Запрашиваемый пользователь не является ведущим");
+            if (targetUser.Status != "active")
+                return Results.BadRequest("Запрашиваемый пользователь не является активным");
+
+            targetUser.Status = "inactive";
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult UserUpdateInfo(eco_questContext db, User request)
+        {
+            Console.WriteLine("==========/user/update/info==========");
+
+            (bool, IResult) validResult = RequestValidator.ValidateUserModel(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            User? targetUser = (from u in db.Users
+                                where u.UserId == request.UserId
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
+            if (targetUser.Password != PasswordHasher.Encrypt(request.Password))
+                return Results.BadRequest("Запрашиваемый пароль пользователя не совпадает с фактическим");
+
+            targetUser.LastName = request.LastName;
+            targetUser.FirstName = request.FirstName;
+            targetUser.Patronymic = request.Patronymic;
+            targetUser.Login = request.Login;
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult UserUpdatePassword(eco_questContext db, UpdatePasswordDTO request)
+        {
+            Console.WriteLine("==========/user/update/password==========");
+
+            (bool, IResult) validResult = RequestValidator.ValidateUpdatePasswordDTO(db, request);
+
+            if (!validResult.Item1)
+                return validResult.Item2;
+
+            User? targetUser = (from u in db.Users
+                                where u.Login == request.Login
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
+            if (targetUser.Password != PasswordHasher.Encrypt(request.OldPassword))
+                return Results.BadRequest("Запрашиваемый пароль пользователя не совпадает с фактическим");
+
+            targetUser.Password = PasswordHasher.Encrypt(request.NewPassword);
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+
+        public void DeleteExpiredGames(eco_questContext db)
+        {
+            List<Game> allGames = db.Games.ToList();
+            List<(Game, DateTime)> allGamesDates = new List<(Game, DateTime)>();
+
+            foreach (var game in allGames)
+                allGamesDates.Add((game, DateTime.Parse(game.Date)));
+
+            List<Game> targetGames = (from g in allGamesDates
+                                      where DateTime.Now >= g.Item2.Add(TimeSpan.FromDays(7))
+                                      select g.Item1).ToList();
+
+            db.Games.RemoveRange(targetGames);
+
+            db.SaveChanges();
         }
     }
 }

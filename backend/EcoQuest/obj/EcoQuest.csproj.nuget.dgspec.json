@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {}
+    "S:\\Информация (3)\\EcoQuest\\Backend\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {
+    "S:\\Информация (3)\\EcoQuest\\Backend\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
+        "projectUniqueName": "S:\\Информация (3)\\EcoQuest\\Backend\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
         "projectName": "EcoQuest",
-        "projectPath": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
+        "projectPath": "S:\\Информация (3)\\EcoQuest\\Backend\\EcoQuest (GitHub)\\backend\\EcoQuest\\EcoQuest.csproj",
         "packagesPath": "C:\\Users\\Michael\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Michael\\Desktop\\EcoQuest (GitHub)\\backend\\EcoQuest\\obj\\",
+        "outputPath": "S:\\Информация (3)\\EcoQuest\\Backend\\EcoQuest (GitHub)\\backend\\EcoQuest\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -44,6 +44,10 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "ClosedXML": {
+              "target": "Package",
+              "version": "[0.97.0, )"
+            },
             "Microsoft.AspNet.WebApi.Core": {
               "target": "Package",
               "version": "[5.2.9, )"
@@ -86,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.101\\RuntimeIdentifierGraph.json"
         }
       }
     }

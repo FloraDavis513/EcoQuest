@@ -9,20 +9,17 @@ namespace EcoQuest
 
         public virtual DbSet<CmdaExec> CmdaExecs { get; set; } = null!;
         public virtual DbSet<FlywaySchemaHistory> FlywaySchemaHistories { get; set; } = null!;
+        public virtual DbSet<Game> Games { get; set; } = null!;
         public virtual DbSet<GameBoard> GameBoards { get; set; } = null!;
-        public virtual DbSet<GameBoardsQuestion> GameBoardsQuestions { get; set; } = null!;
+        public virtual DbSet<GameBoardsProduct> GameBoardsProducts { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
-        public virtual DbSet<ProductsForBoard> ProductsForBoards { get; set; } = null!;
         public virtual DbSet<Question> Questions { get; set; } = null!;
-        public virtual DbSet<Session> Sessions { get; set; } = null!;
+        public virtual DbSet<Statistic> Statistics { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                //optionsBuilder.UseNpgsql("Server=localhost;Port=8082;Database=eco_quest;UID=postgres;PWD=qwerty123iop");
-            }
+            if (!optionsBuilder.IsConfigured) { }
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,66 +47,102 @@ namespace EcoQuest
                 entity.Property(e => e.Version).HasMaxLength(50).HasColumnName("version");
             });
 
-            modelBuilder.Entity<GameBoard>(entity =>
+            modelBuilder.Entity<Game>(entity =>
             {
-                entity.ToTable("game_board");
-                entity.Property(e => e.Id).HasColumnName("id");
-                entity.Property(e => e.Name).HasMaxLength(500).HasColumnName("name");
-                entity.Property(e => e.NumFields).HasColumnName("num_fields");
+                entity.ToTable("games");
+                entity.HasIndex(e => e.GameId, "games_game_id_unique").IsUnique();
+                entity.Property(e => e.GameId).ValueGeneratedNever().HasColumnName("game_id");
+                entity.Property(e => e.CurrentQuestionId).HasColumnName("current_question_id");
+                entity.Property(e => e.Date).HasColumnType("character varying").HasColumnName("date");
+                entity.Property(e => e.Message).HasColumnType("character varying").HasColumnName("message");
+                entity.Property(e => e.Name).HasColumnType("character varying").HasColumnName("name");
+                entity.Property(e => e.State).HasColumnType("json").HasColumnName("state");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.HasOne(d => d.User).WithMany(p => p.Games).HasForeignKey(d => d.UserId).HasConstraintName("games_fkey");
             });
 
-            modelBuilder.Entity<GameBoardsQuestion>(entity =>
+            modelBuilder.Entity<GameBoard>(entity =>
             {
-                entity.HasKey(e => new { e.GameBoardId, e.QuestionId }).HasName("game_boards_questions_pkey");
-                entity.ToTable("game_boards_questions");
+                entity.ToTable("game_boards");
+                entity.HasIndex(e => e.GameBoardId, "game_boards_game_board_id_unique").IsUnique();
+                entity.Property(e => e.GameBoardId).HasColumnName("game_board_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Name).HasColumnType("character varying").HasColumnName("name");
+                entity.Property(e => e.NumFields).HasColumnName("num_fields");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.HasOne(d => d.User).WithMany(p => p.GameBoards).HasForeignKey(d => d.UserId).HasConstraintName("game_boards_fkey");
+                entity.HasMany(d => d.Questions).WithMany(p => p.GameBoards).UsingEntity<Dictionary<string, object>>(
+                        "GameBoardsQuestion",
+                        l => l.HasOne<Question>().WithMany().HasForeignKey("QuestionId").HasConstraintName("game_boards_questions_question_id_fkey"),
+                        r => r.HasOne<GameBoard>().WithMany().HasForeignKey("GameBoardId").HasConstraintName("game_boards_questions_game_board_id_fkey"),
+                        j =>
+                        {
+                            j.HasKey("GameBoardId", "QuestionId").HasName("game_boards_questions_pkey");
+                            j.ToTable("game_boards_questions");
+                            j.IndexerProperty<long>("GameBoardId").HasColumnName("game_board_id");
+                            j.IndexerProperty<long>("QuestionId").HasColumnName("question_id");
+                        });
+            });
+
+            modelBuilder.Entity<GameBoardsProduct>(entity =>
+            {
+                entity.HasKey(e => new { e.GameBoardId, e.ProductId }).HasName("game_boards_products_pkey");
+                entity.ToTable("game_boards_products");
                 entity.Property(e => e.GameBoardId).HasColumnName("game_board_id");
-                entity.Property(e => e.QuestionId).HasColumnName("question_id");
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
+                entity.Property(e => e.NumOfRepeating).HasColumnName("num_of_repeating");
+                entity.HasOne(d => d.GameBoard).WithMany(p => p.GameBoardsProducts).HasForeignKey(d => d.GameBoardId).HasConstraintName("game_boards_products_game_board_id_fkey");
+                entity.HasOne(d => d.Product).WithMany(p => p.GameBoardsProducts).HasForeignKey(d => d.ProductId).HasConstraintName("game_boards_products_product_id_fkey");
             });
 
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("products");
-                entity.Property(e => e.Id).HasColumnName("id");
+                entity.HasIndex(e => e.Name, "products_name_unique").IsUnique();
+                entity.HasIndex(e => e.ProductId, "products_product_id_unique").IsUnique();
+                entity.Property(e => e.ProductId).HasColumnName("product_id").UseIdentityAlwaysColumn();
                 entity.Property(e => e.Colour).HasColumnType("character varying").HasColumnName("colour");
+                entity.Property(e => e.Logo).HasColumnType("character varying").HasColumnName("logo");
                 entity.Property(e => e.Name).HasColumnType("character varying").HasColumnName("name");
                 entity.Property(e => e.Round).HasColumnName("round");
-            });
-
-            modelBuilder.Entity<ProductsForBoard>(entity =>
-            {
-                entity.HasKey(e => new { e.GameBoardId, e.ProductId }).HasName("products_for_boards_pkey");
-                entity.ToTable("products_for_boards");
-                entity.Property(e => e.GameBoardId).HasColumnName("game_board_id");
-                entity.Property(e => e.ProductId).HasColumnName("product_id");
-                entity.Property(e => e.NumOfRepeating).HasColumnName("num_of_repeating");
             });
 
             modelBuilder.Entity<Question>(entity =>
             {
                 entity.ToTable("questions");
-                entity.Property(e => e.Id).HasColumnName("id");
-                entity.Property(e => e.Answer).HasColumnType("character varying").HasColumnName("answer");
+                entity.HasIndex(e => e.QuestionId, "questions_question_id_unique").IsUnique();
+                entity.Property(e => e.QuestionId).HasColumnName("question_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Answers).HasColumnType("character varying").HasColumnName("answers");
+                entity.Property(e => e.LastEditDate).HasColumnType("character varying").HasColumnName("last_edit_date");
+                entity.Property(e => e.Media).HasColumnType("character varying").HasColumnName("media");
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
                 entity.Property(e => e.ShortText).HasColumnType("character varying").HasColumnName("short_text");
                 entity.Property(e => e.Text).HasColumnType("character varying").HasColumnName("text");
-                entity.Property(e => e.Type).HasMaxLength(255).HasColumnName("type");
-                entity.HasOne(d => d.Product).WithMany(p => p.Questions).HasForeignKey(d => d.ProductId).HasConstraintName("fkdnt39hlm1bcye9ivenccipd5s");
+                entity.Property(e => e.Type).HasColumnType("character varying").HasColumnName("type");
+                entity.HasOne(d => d.Product).WithMany(p => p.Questions).HasForeignKey(d => d.ProductId).HasConstraintName("questions_fkey");
             });
 
-            modelBuilder.Entity<Session>(entity =>
+            modelBuilder.Entity<Statistic>(entity =>
             {
-                entity.HasKey(e => e.Uuid).HasName("sessions_pkey");
-                entity.ToTable("sessions");
-                entity.Property(e => e.Uuid).ValueGeneratedNever().HasColumnName("uuid");
-                entity.Property(e => e.IdCurrentQuestion).HasColumnName("id_current_question");
-                entity.Property(e => e.State).HasColumnType("character varying").HasColumnName("state");
-                entity.Property(e => e.Username).HasMaxLength(255).HasColumnName("username");
+                entity.HasKey(e => e.RecordId).HasName("statistics_pkey");
+                entity.ToTable("statistics");
+                entity.HasIndex(e => e.RecordId, "statistics_record_id_unique").IsUnique();
+                entity.Property(e => e.RecordId).HasColumnName("record_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Date).HasColumnType("character varying").HasColumnName("date");
+                entity.Property(e => e.Duration).HasColumnType("character varying").HasColumnName("duration");
+                entity.Property(e => e.FirstName).HasColumnType("character varying").HasColumnName("first name");
+                entity.Property(e => e.LastName).HasColumnType("character varying").HasColumnName("last name");
+                entity.Property(e => e.Login).HasColumnType("character varying").HasColumnName("login");
+                entity.Property(e => e.Patronymic).HasColumnType("character varying").HasColumnName("patronymic");
+                entity.Property(e => e.Results).HasColumnType("json").HasColumnName("results");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("users");
-                entity.Property(e => e.UserId).HasColumnName("user_id").HasDefaultValueSql("nextval('user_id_seq'::regclass)");
+                entity.HasIndex(e => e.Login, "users_login_unique").IsUnique();
+                entity.HasIndex(e => e.UserId, "users_user_id_unique").IsUnique();
+                entity.Property(e => e.UserId).HasColumnName("user_id").UseIdentityAlwaysColumn();
                 entity.Property(e => e.FirstName).HasColumnType("character varying").HasColumnName("first name");
                 entity.Property(e => e.LastName).HasColumnType("character varying").HasColumnName("last name");
                 entity.Property(e => e.Login).HasColumnType("character varying").HasColumnName("login");
@@ -118,8 +151,6 @@ namespace EcoQuest
                 entity.Property(e => e.Role).HasColumnType("character varying").HasColumnName("role");
                 entity.Property(e => e.Status).HasColumnType("character varying").HasColumnName("status");
             });
-
-            modelBuilder.HasSequence("user_id_seq");
 
             OnModelCreatingPartial(modelBuilder);
         }

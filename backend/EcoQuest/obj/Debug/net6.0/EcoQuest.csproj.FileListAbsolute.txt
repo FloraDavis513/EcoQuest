@@ -1,42 +1,54 @@
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.Development.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.exe
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.deps.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.runtimeconfig.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.pdb
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.AssemblyReference.cache
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfoInputs.cache
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfo.cs
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CoreCompileInputs.cache
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets.build.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets.development.json
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\scopedcss\bundle\EcoQuest.styles.css
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\refint\EcoQuest.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.pdb
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.genruntimeconfig.cache
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\ref\EcoQuest.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\System.Net.Http.Formatting.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\System.Web.Http.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Newtonsoft.Json.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Newtonsoft.Json.Bson.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CopyComplete
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Humanizer.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Abstractions.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Design.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Relational.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.Extensions.Caching.Memory.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.Extensions.DependencyInjection.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Npgsql.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.JsonWebTokens.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Logging.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Tokens.dll
-C:\Users\Michael\Desktop\EcoQuest\EcoQuest\bin\Debug\net6.0\System.IdentityModel.Tokens.Jwt.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.Development.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.exe
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.deps.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.runtimeconfig.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.pdb
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\ClosedXML.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\DocumentFormat.OpenXml.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\ExcelNumberFormat.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Humanizer.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Irony.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.Net.Http.Formatting.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.Web.Http.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Design.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.EntityFrameworkCore.Relational.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.Extensions.Caching.Memory.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.Extensions.DependencyInjection.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.JsonWebTokens.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Logging.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Microsoft.IdentityModel.Tokens.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Newtonsoft.Json.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Newtonsoft.Json.Bson.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Npgsql.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\SixLabors.Fonts.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.IdentityModel.Tokens.Jwt.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.IO.Packaging.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\XLParser.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.AssemblyReference.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.GeneratedMSBuildEditorConfig.editorconfig
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfoInputs.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfo.cs
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CoreCompileInputs.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.MvcApplicationPartsAssemblyInfo.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.EcoQuest.Microsoft.AspNetCore.StaticWebAssets.props
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.build.EcoQuest.props
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.buildMultiTargeting.EcoQuest.props
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.buildTransitive.EcoQuest.props
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets.pack.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets.build.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets.development.json
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\scopedcss\bundle\EcoQuest.styles.css
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CopyComplete
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\refint\EcoQuest.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.pdb
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.genruntimeconfig.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\ref\EcoQuest.dll
