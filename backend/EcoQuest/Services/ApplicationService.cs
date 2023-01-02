@@ -1264,9 +1264,120 @@ namespace EcoQuest
             using (MemoryStream stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
-                return Results.File(stream.ToArray(), "Statistics.xlsx");
+                return Results.File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Statistics.xlsx");
             }
         }
+
+
+
+        public IResult StatisticExportTest(eco_questContext db, StatisticExportDTO request)
+        {
+            Console.WriteLine("==========/statistic/export==========");
+
+            List<Statistic> allRecords = db.Statistics.ToList();
+            List<(Statistic, DateTime, TimeSpan)> allRecordsDatesDurations = new List<(Statistic, DateTime, TimeSpan)>();
+
+            foreach (var record in allRecords)
+                allRecordsDatesDurations.Add((record, DateTime.Parse(record.Date), TimeSpan.Parse(record.Duration)));
+
+            DateTime startDate;
+            DateTime endDate;
+            TimeSpan startDuration;
+            TimeSpan endDuration;
+
+            bool startDateParsingResult = DateTime.TryParse(request.StartDate, out startDate);
+            bool endDateParsingResult = DateTime.TryParse(request.EndDate, out endDate);
+            bool startDurationParsingResult = TimeSpan.TryParse(request.StartDuration, out startDuration);
+            bool endDurationParsingResult = TimeSpan.TryParse(request.EndDuration, out endDuration);
+
+            if (!startDateParsingResult)
+                startDate = allRecordsDatesDurations.Min(x => x.Item2);
+            if (!endDateParsingResult)
+                endDate = allRecordsDatesDurations.Max(x => x.Item2);
+            if (!startDurationParsingResult)
+                startDuration = allRecordsDatesDurations.Min(x => x.Item3);
+            if (!endDurationParsingResult)
+                endDuration = allRecordsDatesDurations.Max(x => x.Item3);
+
+            if (!(startDate <= endDate))
+                return Results.BadRequest("Дата начала не может быть больше даты конца");
+            if (!(startDuration <= endDuration))
+                return Results.BadRequest("Продолжительность начала не может быть больше продолжительности конца");
+
+            List<Statistic> targetRecords = (from r in allRecordsDatesDurations
+                                             where (r.Item2 >= startDate && r.Item2 <= endDate) && (r.Item3 >= startDuration && r.Item3 <= endDuration)
+                                             orderby r.Item2, r.Item3
+                                             select r.Item1).ToList();
+
+            XLWorkbook workbook = new XLWorkbook();
+            IXLWorksheet worksheet = workbook.Worksheets.Add("Statistics");
+
+            int row = 1;
+
+            worksheet.Cell("B" + row).Value = "Дата проведения игры";
+            worksheet.Cell("C" + row).Value = "Продолжительность игры";
+            worksheet.Cell("D" + row).Value = "ФИО ведущего";
+            worksheet.Cell("E" + row).Value = "Логин ведущего";
+            worksheet.Cell("F" + row).Value = "Команда";
+            worksheet.Cell("G" + row).Value = "Игрок";
+            worksheet.Cell("H" + row).Value = "Очки";
+            worksheet.Cell("I" + row).Value = "Место";
+
+            worksheet.Range($"B{row}:I{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+
+            worksheet.Range($"B{row}:I{row}").Style.Font.FontColor = XLColor.White;
+
+            row++;
+
+            StatisticsResultsDTO? statisticsResultsDTO;
+
+            foreach (var record in targetRecords)
+            {
+                statisticsResultsDTO = JsonSerializer.Deserialize<StatisticsResultsDTO>(record.Results);
+                if (statisticsResultsDTO == null)
+                    statisticsResultsDTO = new StatisticsResultsDTO();
+
+                foreach (var team in statisticsResultsDTO.Teams)
+                {
+                    foreach (var player in team.Players)
+                    {
+                        worksheet.Cell("A" + row).Value = record.RecordId;
+                        worksheet.Cell("B" + row).Value = record.Date;
+                        worksheet.Cell("C" + row).Value = record.Duration;
+                        worksheet.Cell("D" + row).Value = $"{record.LastName} {record.FirstName} {record.Patronymic}";
+                        worksheet.Cell("E" + row).Value = record.Login;
+                        worksheet.Cell("F" + row).Value = team.Name;
+                        worksheet.Cell("G" + row).Value = player;
+                        worksheet.Cell("H" + row).Value = team.Score;
+                        worksheet.Cell("I" + row).Value = team.Place;
+
+                        row++;
+                    }
+                }
+            }
+
+            if (targetRecords.Count > 0)
+            {
+                worksheet.Range($"A2:A{row - 1}").Style.Fill.BackgroundColor = XLColor.LightGreen;
+                worksheet.Range($"B2:I{row - 1}").Style.Fill.BackgroundColor = XLColor.Green;
+
+                worksheet.Range($"B2:I{row - 1}").Style.Font.FontColor = XLColor.White;
+            }
+
+            worksheet.Columns().AdjustToContents();
+
+            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+            return Results.Json(new { Test = "Test" });
+        }
+
+
+
+
 
         public IResult UserCreate(eco_questContext db, User request)
         {
