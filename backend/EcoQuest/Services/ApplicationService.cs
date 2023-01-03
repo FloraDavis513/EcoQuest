@@ -291,23 +291,25 @@ namespace EcoQuest
             return Results.Ok();
         }
 
-        public IResult GameBoardCreate(eco_questContext db, GameBoard request)
+        public IResult GameBoardCreate(eco_questContext db, GameBoardDTO request)
         {
             Console.WriteLine("==========/gameBoard/create==========");
 
-            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, request);
+            GameBoard convertedRequest = ModelConverter.ToGameBoard(db, request);
+
+            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, convertedRequest);
 
             if (!validResult.Item1)
                 return validResult.Item2;
 
             GameBoard newGameBoard = new GameBoard()
             {
-                Name = request.Name,
-                NumFields = request.NumFields,
-                UserId = request.UserId,
+                Name = convertedRequest.Name,
+                NumFields = convertedRequest.NumFields,
+                UserId = convertedRequest.UserId,
             };
 
-            foreach (var gameBoardsProduct in request.GameBoardsProducts)
+            foreach (var gameBoardsProduct in convertedRequest.GameBoardsProducts)
             {
                 GameBoardsProduct newGameBoardsProduct = new GameBoardsProduct()
                 {
@@ -320,7 +322,7 @@ namespace EcoQuest
 
             List<Question> allQuestions = db.Questions.ToList();
 
-            foreach (var gameBoardsQuestion in request.Questions)
+            foreach (var gameBoardsQuestion in convertedRequest.Questions)
             {
                 Question? targetQuestion = (from q in allQuestions
                                             where q.QuestionId == gameBoardsQuestion.QuestionId
@@ -372,7 +374,9 @@ namespace EcoQuest
                     gameBoardsProduct.Product.Questions.Add(question);
             }
 
-            return Results.Json(targetGameBoard, new JsonSerializerOptions()
+            GameBoardDTO convertedResponse = ModelConverter.ToGameBoardDTO(db, targetGameBoard);
+
+            return Results.Json(convertedResponse, new JsonSerializerOptions()
             {
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -386,7 +390,10 @@ namespace EcoQuest
 
             List<GameBoard> allGameBoards = db.GameBoards.ToList();
 
-            return Results.Json(allGameBoards.OrderBy(x => x.GameBoardId));
+            List<GameBoardDTO> convertedResponse = (from gb in allGameBoards
+                                                    select ModelConverter.ToGameBoardDTO(db, gb)).ToList();
+
+            return Results.Json(convertedResponse.OrderBy(x => x.GameBoardId));
         }
         public IResult GameBoardGetAllId(eco_questContext db, long id)
         {
@@ -404,7 +411,10 @@ namespace EcoQuest
             foreach (var gameBoard in targetUser.GameBoards)
                 gameBoard.User = null;
 
-            return Results.Json(targetUser.GameBoards.OrderBy(x => x.GameBoardId));
+            List<GameBoardDTO> convertedResponse = (from gb in targetUser.GameBoards
+                                                    select ModelConverter.ToGameBoardDTO(db, gb)).ToList();
+
+            return Results.Json(convertedResponse.OrderBy(x => x.GameBoardId));
         }
         public IResult GameBoardShareFromUserIdGameBoardIdToUserId(eco_questContext db, long fromUserId, long gameBoardId, long toUserId)
         {
@@ -475,35 +485,37 @@ namespace EcoQuest
 
             return Results.Ok();
         }
-        public IResult GameBoardUpdate(eco_questContext db, GameBoard request)
+        public IResult GameBoardUpdate(eco_questContext db, GameBoardDTO request)
         {
             Console.WriteLine("==========/gameBoard/update==========");
 
-            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, request);
+            GameBoard convertedRequest = ModelConverter.ToGameBoard(db, request);
+
+            (bool, IResult) validResult = RequestValidator.ValidateGameBoardModel(db, convertedRequest);
 
             if (!validResult.Item1)
                 return validResult.Item2;
 
             GameBoard? targetGameBoard = (from gb in db.GameBoards.Include(x => x.GameBoardsProducts).Include(y => y.Questions)
-                                          where gb.GameBoardId == request.GameBoardId
+                                          where gb.GameBoardId == convertedRequest.GameBoardId
                                           select gb).FirstOrDefault();
 
             if (targetGameBoard == null)
             {
-                GameBoardDeleteId(db, request.GameBoardId);
+                GameBoardDeleteId(db, convertedRequest.GameBoardId);
                 return GameBoardCreate(db, request);
             }
 
-            targetGameBoard.Name = request.Name;
-            targetGameBoard.NumFields = request.NumFields;
-            targetGameBoard.UserId = request.UserId;
+            targetGameBoard.Name = convertedRequest.Name;
+            targetGameBoard.NumFields = convertedRequest.NumFields;
+            targetGameBoard.UserId = convertedRequest.UserId;
 
             targetGameBoard.GameBoardsProducts.Clear();
             targetGameBoard.Questions.Clear();
 
             db.SaveChanges();
 
-            foreach (var gameBoardsProduct in request.GameBoardsProducts)
+            foreach (var gameBoardsProduct in convertedRequest.GameBoardsProducts)
             {
                 GameBoardsProduct newGameBoardsProduct = new GameBoardsProduct()
                 {
@@ -517,7 +529,7 @@ namespace EcoQuest
 
             List<Question> allQuestions = db.Questions.ToList();
 
-            foreach (var gameBoardsQuestion in request.Questions)
+            foreach (var gameBoardsQuestion in convertedRequest.Questions)
             {
                 Question? targetQuestion = (from q in allQuestions
                                             where q.QuestionId == gameBoardsQuestion.QuestionId
@@ -1264,120 +1276,9 @@ namespace EcoQuest
             using (MemoryStream stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
-                return Results.File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Statistics.xlsx");
+                return Results.File(stream.ToArray(), "Statistics.xlsx");
             }
         }
-
-
-
-        public IResult StatisticExportTest(eco_questContext db, StatisticExportDTO request)
-        {
-            Console.WriteLine("==========/statistic/export==========");
-
-            List<Statistic> allRecords = db.Statistics.ToList();
-            List<(Statistic, DateTime, TimeSpan)> allRecordsDatesDurations = new List<(Statistic, DateTime, TimeSpan)>();
-
-            foreach (var record in allRecords)
-                allRecordsDatesDurations.Add((record, DateTime.Parse(record.Date), TimeSpan.Parse(record.Duration)));
-
-            DateTime startDate;
-            DateTime endDate;
-            TimeSpan startDuration;
-            TimeSpan endDuration;
-
-            bool startDateParsingResult = DateTime.TryParse(request.StartDate, out startDate);
-            bool endDateParsingResult = DateTime.TryParse(request.EndDate, out endDate);
-            bool startDurationParsingResult = TimeSpan.TryParse(request.StartDuration, out startDuration);
-            bool endDurationParsingResult = TimeSpan.TryParse(request.EndDuration, out endDuration);
-
-            if (!startDateParsingResult)
-                startDate = allRecordsDatesDurations.Min(x => x.Item2);
-            if (!endDateParsingResult)
-                endDate = allRecordsDatesDurations.Max(x => x.Item2);
-            if (!startDurationParsingResult)
-                startDuration = allRecordsDatesDurations.Min(x => x.Item3);
-            if (!endDurationParsingResult)
-                endDuration = allRecordsDatesDurations.Max(x => x.Item3);
-
-            if (!(startDate <= endDate))
-                return Results.BadRequest("Дата начала не может быть больше даты конца");
-            if (!(startDuration <= endDuration))
-                return Results.BadRequest("Продолжительность начала не может быть больше продолжительности конца");
-
-            List<Statistic> targetRecords = (from r in allRecordsDatesDurations
-                                             where (r.Item2 >= startDate && r.Item2 <= endDate) && (r.Item3 >= startDuration && r.Item3 <= endDuration)
-                                             orderby r.Item2, r.Item3
-                                             select r.Item1).ToList();
-
-            XLWorkbook workbook = new XLWorkbook();
-            IXLWorksheet worksheet = workbook.Worksheets.Add("Statistics");
-
-            int row = 1;
-
-            worksheet.Cell("B" + row).Value = "Дата проведения игры";
-            worksheet.Cell("C" + row).Value = "Продолжительность игры";
-            worksheet.Cell("D" + row).Value = "ФИО ведущего";
-            worksheet.Cell("E" + row).Value = "Логин ведущего";
-            worksheet.Cell("F" + row).Value = "Команда";
-            worksheet.Cell("G" + row).Value = "Игрок";
-            worksheet.Cell("H" + row).Value = "Очки";
-            worksheet.Cell("I" + row).Value = "Место";
-
-            worksheet.Range($"B{row}:I{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
-
-            worksheet.Range($"B{row}:I{row}").Style.Font.FontColor = XLColor.White;
-
-            row++;
-
-            StatisticsResultsDTO? statisticsResultsDTO;
-
-            foreach (var record in targetRecords)
-            {
-                statisticsResultsDTO = JsonSerializer.Deserialize<StatisticsResultsDTO>(record.Results);
-                if (statisticsResultsDTO == null)
-                    statisticsResultsDTO = new StatisticsResultsDTO();
-
-                foreach (var team in statisticsResultsDTO.Teams)
-                {
-                    foreach (var player in team.Players)
-                    {
-                        worksheet.Cell("A" + row).Value = record.RecordId;
-                        worksheet.Cell("B" + row).Value = record.Date;
-                        worksheet.Cell("C" + row).Value = record.Duration;
-                        worksheet.Cell("D" + row).Value = $"{record.LastName} {record.FirstName} {record.Patronymic}";
-                        worksheet.Cell("E" + row).Value = record.Login;
-                        worksheet.Cell("F" + row).Value = team.Name;
-                        worksheet.Cell("G" + row).Value = player;
-                        worksheet.Cell("H" + row).Value = team.Score;
-                        worksheet.Cell("I" + row).Value = team.Place;
-
-                        row++;
-                    }
-                }
-            }
-
-            if (targetRecords.Count > 0)
-            {
-                worksheet.Range($"A2:A{row - 1}").Style.Fill.BackgroundColor = XLColor.LightGreen;
-                worksheet.Range($"B2:I{row - 1}").Style.Fill.BackgroundColor = XLColor.Green;
-
-                worksheet.Range($"B2:I{row - 1}").Style.Font.FontColor = XLColor.White;
-            }
-
-            worksheet.Columns().AdjustToContents();
-
-            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            worksheet.Range($"A1:I{row - 1}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-
-            worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-
-            return Results.Json(new { Test = "Test" });
-        }
-
-
-
-
 
         public IResult UserCreate(eco_questContext db, User request)
         {
