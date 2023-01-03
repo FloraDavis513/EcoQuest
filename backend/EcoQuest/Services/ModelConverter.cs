@@ -73,7 +73,12 @@
                                                   select q).ToList();
 
                 foreach (var question in allQuestions)
+                {
+                    question.Product = null;
+                    question.GameBoards = null;
+
                     productDTO.AllQuestions.Add(question);
+                }
 
                 foreach (var question in activeQuestions)
                     productDTO.ActiveQuestions.Add(question.QuestionId);
