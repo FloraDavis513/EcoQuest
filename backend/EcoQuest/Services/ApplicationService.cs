@@ -5,6 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
@@ -235,6 +236,187 @@ namespace EcoQuest
 
             return Results.Json(targetUser.Games.OrderBy(x => x.GameId));
         }
+        public IResult GameStatePlayersCreateId(eco_questContext db, PlayerDTO request, long id)
+        {
+            Console.WriteLine("==========/game/state/players/create/{id:long}==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == id
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+            if (targetGame.State == null)
+                return Results.BadRequest("Поле State имеет значение null");
+
+            JsonNode? stateNode = JsonNode.Parse(targetGame.State);
+
+            if (stateNode != null)
+            {
+                JsonNode? playersNode = stateNode["Players"];
+
+                if (playersNode != null)
+                {
+                    JsonArray allPlayers = playersNode.AsArray();
+
+                    List<long> allPlayerIds = (from p in allPlayers
+                                               select (long) p["PlayerId"]!).ToList();
+                    
+                    long newPlayerId = 1;
+
+                    while (allPlayerIds.Contains(newPlayerId))
+                        newPlayerId++;
+
+                    PlayerDTO newPlayer = new PlayerDTO()
+                    {
+                        PlayerId = newPlayerId,
+                        Login = request.Login,
+                        List = request.List
+                    };
+
+                    allPlayers.Add(newPlayer);
+
+                    JsonObject stateObject = stateNode.AsObject();
+
+                    stateObject["Players"] = allPlayers;
+
+                    targetGame.State = stateObject.ToJsonString(new JsonSerializerOptions()
+                    {
+                        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                        WriteIndented = true
+                    });
+
+                    db.SaveChanges();
+                }
+                else
+                {
+                    return Results.BadRequest("Поле Players имеет значение null");
+                }
+            }
+            else
+            {
+                return Results.BadRequest("Поле State имеет значение null");
+            }
+
+            return Results.Ok();
+        }
+        public IResult GameStatePlayersDeleteGameIdPlayerId(eco_questContext db, long gameId, long playerId)
+        {
+            Console.WriteLine("==========/game/state/players/delete/{gameId:long}/{playerId:long}==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == gameId
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+            if (targetGame.State == null)
+                return Results.BadRequest("Поле State имеет значение null");
+
+            JsonNode? stateNode = JsonNode.Parse(targetGame.State);
+
+            if (stateNode != null)
+            {
+                JsonNode? playersNode = stateNode["Players"];
+
+                if (playersNode != null)
+                {
+                    JsonArray allPlayers = playersNode.AsArray();
+
+                    JsonNode? targetPlayerNode = (from p in allPlayers
+                                                  where (long) p["PlayerId"]! == playerId
+                                                  select p).FirstOrDefault();
+
+                    if (targetPlayerNode != null)
+                    {
+                        allPlayers.Remove(targetPlayerNode);
+
+                        JsonObject stateObject = stateNode.AsObject();
+
+                        stateObject["Players"] = allPlayers;
+
+                        targetGame.State = stateObject.ToJsonString(new JsonSerializerOptions()
+                        {
+                            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                            WriteIndented = true
+                        });
+
+                        db.SaveChanges();
+                    }
+                }
+                else
+                {
+                    return Results.BadRequest("Поле Players имеет значение null");
+                }
+            }
+            else
+            {
+                return Results.BadRequest("Поле State имеет значение null");
+            }
+
+            return Results.Ok();
+        }
+        public IResult GameStatePlayersUpdateId(eco_questContext db, PlayerDTO request, long id)
+        {
+            Console.WriteLine("==========/game/state/players/update/{id:long}==========");
+
+            DeleteExpiredGames(db);
+
+            Game? targetGame = (from g in db.Games
+                                where g.GameId == id
+                                select g).FirstOrDefault();
+
+            if (targetGame == null)
+                return Results.NotFound("Запрашиваемая игра не найдена");
+            if (targetGame.State == null)
+                return Results.BadRequest("Поле State имеет значение null");
+
+            JsonNode? stateNode = JsonNode.Parse(targetGame.State);
+
+            if (stateNode != null)
+            {
+                JsonNode? playersNode = stateNode["Players"];
+
+                if (playersNode != null)
+                {
+                    JsonArray allPlayers = playersNode.AsArray();
+
+                    JsonNode? targetPlayerNode = (from p in allPlayers
+                                                  where (long) p["PlayerId"]! == request.PlayerId
+                                                  select p).FirstOrDefault();
+
+                    if (targetPlayerNode == null)
+                        return Results.NotFound("Запрашиваемый игрок не найден");
+
+                    JsonObject targetPlayerObject = targetPlayerNode.AsObject();
+
+                    targetPlayerObject["Login"] = request.Login;
+                    targetPlayerObject["List"] = request.List;
+
+                    targetGame.State = stateNode.ToJsonString(new JsonSerializerOptions()
+                    {
+                        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                        WriteIndented = true
+                    });
+
+                    db.SaveChanges();
+                }
+                else
+                {
+                    return Results.BadRequest("Поле Players имеет значение null");
+                }
+            }
+            else
+            {
+                return Results.BadRequest("Поле State имеет значение null");
+            }
+
+            return Results.Ok();
+        }
         public IResult GameUpdate(eco_questContext db, Game request)
         {
             Console.WriteLine("==========/game/update==========");
@@ -252,12 +434,6 @@ namespace EcoQuest
 
             if (targetGame == null)
                 return Results.NotFound("Запрашиваемая игра не найдена");
-
-            if (targetGame == null)
-            {
-                GameDeleteId(db, request.GameId);
-                return GameCreate(db, request);
-            }
 
             targetGame.UserId = request.UserId;
             targetGame.Name = request.Name;
@@ -962,7 +1138,7 @@ namespace EcoQuest
                 file.CopyTo(fileStream);
             }
 
-            targetProduct.Logo = filePath;
+            targetProduct.Logo = $"{new DirectoryInfo(Path.GetDirectoryName(filePath)).Name}/{Path.GetFileName(filePath)}";
 
             db.SaveChanges();
             
@@ -1106,7 +1282,7 @@ namespace EcoQuest
                 file.CopyTo(fileStream);
             }
 
-            targetQuestion.Media = filePath;
+            targetQuestion.Media = $"{new DirectoryInfo(Path.GetDirectoryName(filePath)).Name}/{Path.GetFileName(filePath)}";
 
             db.SaveChanges();
 

@@ -64,6 +64,9 @@ namespace EcoQuest
             _app.MapGet("/game/get/{id:long}", _service.GameGetId);
             _app.MapGet("/game/get/all", _service.GameGetAll);
             _app.MapGet("/game/get/all/{id:long}", _service.GameGetAllId);
+            _app.MapPost("/game/state/players/create/{id:long}", _service.GameStatePlayersCreateId);
+            _app.MapDelete("/game/state/players/delete/{gameId:long}/{playerId:long}", _service.GameStatePlayersDeleteGameIdPlayerId);
+            _app.MapPost("/game/state/players/update/{id:long}", _service.GameStatePlayersUpdateId);
             _app.MapPost("/game/update", _service.GameUpdate);
             _app.MapPost("/game/update/stateAndQuestion", _service.GameUpdateStateAndQuestion);
 
