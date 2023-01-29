@@ -29,15 +29,15 @@ namespace EcoQuest
 
             WebApplication app = builder.Build();
 
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
                 builder.AllowAnyHeader();
                 builder.AllowAnyMethod();
             });
-
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
 
             app.UseAuthentication();
             app.UseAuthorization();
