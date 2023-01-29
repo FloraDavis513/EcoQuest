@@ -36,6 +36,9 @@ namespace EcoQuest
                 builder.AllowAnyMethod();
             });
 
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
             app.UseAuthentication();
             app.UseAuthorization();
 

@@ -206,7 +206,6 @@ namespace EcoQuest
 
             foreach (var game in allGames)
             {
-                game.State = null;
                 game.CurrentQuestionId = null;
             }
 
@@ -229,7 +228,6 @@ namespace EcoQuest
 
             foreach (var game in targetUser.Games)
             {
-                game.State = null;
                 game.CurrentQuestionId = null;
                 game.User = null;
             }
@@ -1448,7 +1446,7 @@ namespace EcoQuest
 
             worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-
+            
             using (MemoryStream stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
