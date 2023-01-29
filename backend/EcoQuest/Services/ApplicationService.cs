@@ -944,11 +944,22 @@ namespace EcoQuest
                 worksheet.Columns().AdjustToContents();
             }
 
+            string filePath = $"{_app.Configuration["SourcePath"]}product.xlsx";
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                workbook.SaveAs(fileStream);
+            }
+
+            return Results.Ok();
+
+            /*
             using (MemoryStream stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
                 return Results.File(stream.ToArray(), "Products.xlsx");
             }
+            */
         }
         public IResult ProductDeleteId(eco_questContext db, long id)
         {
@@ -1446,12 +1457,23 @@ namespace EcoQuest
 
             worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            
+
+            string filePath = $"{_app.Configuration["SourcePath"]}statistics.xlsx";
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                workbook.SaveAs(fileStream);
+            }
+
+            return Results.Ok();
+
+            /*
             using (MemoryStream stream = new MemoryStream())
             {
                 workbook.SaveAs(stream);
                 return Results.File(stream.ToArray(), "Statistics.xlsx");
             }
+            */
         }
 
         public IResult UserCreate(eco_questContext db, User request)

@@ -29,9 +29,6 @@ namespace EcoQuest
 
             WebApplication app = builder.Build();
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
