@@ -25,17 +25,17 @@ namespace EcoQuest
                 };
             });
             builder.Services.AddAuthorization();
-            builder.Services.AddCors();
+            //builder.Services.AddCors();
 
             WebApplication app = builder.Build();
-
+            /*
             app.UseCors(builder =>
             {
                 builder.AllowAnyOrigin();
                 builder.AllowAnyHeader();
                 builder.AllowAnyMethod();
             });
-
+            */
             app.UseAuthentication();
             app.UseAuthorization();
 

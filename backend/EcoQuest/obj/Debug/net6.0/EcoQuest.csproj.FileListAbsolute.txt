@@ -1,9 +1,3 @@
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.AssemblyReference.cache
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.GeneratedMSBuildEditorConfig.editorconfig
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfoInputs.cache
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfo.cs
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CoreCompileInputs.cache
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.MvcApplicationPartsAssemblyInfo.cache
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.Development.json
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\appsettings.json
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\EcoQuest.exe
@@ -38,6 +32,12 @@ S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.IdentityModel.Tokens.Jwt.dll
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\System.IO.Packaging.dll
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\bin\Debug\net6.0\XLParser.dll
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.AssemblyReference.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.GeneratedMSBuildEditorConfig.editorconfig
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfoInputs.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.AssemblyInfo.cs
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.csproj.CoreCompileInputs.cache
+S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\EcoQuest.MvcApplicationPartsAssemblyInfo.cache
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.EcoQuest.Microsoft.AspNetCore.StaticWebAssets.props
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.build.EcoQuest.props
 S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Debug\net6.0\staticwebassets\msbuild.buildMultiTargeting.EcoQuest.props
