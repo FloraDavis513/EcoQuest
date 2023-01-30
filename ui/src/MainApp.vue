@@ -45,19 +45,14 @@ export default {
       window.location.href = "#/auth/login";
       this.currentPath = window.location.hash
     },
-    start_game(teams_logos, teams_name, teams, timer, crit_timer) {
+    start_game() {
       window.location.href = "#/game";
       this.currentPath = window.location.hash;
-      this.teams_name = teams_name;
-      this.teams_logos = teams_logos;
-      this.teams = teams;
-      this.timer = timer;
-      this.crit_timer = crit_timer;
     },
-    create_game(tmpl_id) {
+    create_game(game_id) {
       window.location.href = "#/lobby";
       this.currentPath = window.location.hash;
-      this.tmpl_id = tmpl_id;
+      this.game_id = game_id;
     },
     already_registered() {
       window.location.href = "#/auth/login";
@@ -82,7 +77,7 @@ export default {
 </script>
 
 <template>
-  <component ref="component" :is="currentView" :teams_logos="teams_logos" :teams_name="teams_name" :teams="teams" :timer="timer" :crit_timer="crit_timer" :tmpl_id="tmpl_id" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" />
+  <component ref="component" :is="currentView" :game_id="game_id" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" />
 </template>
 
 <style>

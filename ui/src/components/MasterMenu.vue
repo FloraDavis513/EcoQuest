@@ -1,6 +1,6 @@
 <template>
   <div id="menu" class="menu">
-    <input id="template_name" type="text" placeholder="Шаблон комнаты" class="themes_template" @blur="save_tempalte_name">
+    <input id="template_name" type="text" placeholder="Шаблон комнаты" class="themes_template" :value="template.name" @blur="save_tempalte_name">
     <div id="first_group_button">
         <div class="master_menu_button" @click="select_question" id="select_question">
             Выбор вопросов
@@ -13,7 +13,7 @@
         </div>
     </div>
     <div id="second_group_button" >
-        <div class="master_menu_button" id="save" @mouseover="get_questions" @click="save_template">
+        <div class="master_menu_button" id="save" @click="save_template">
             Сохранить
         </div>
         <div class="master_menu_button" id="delete" @click="check_delete">
@@ -22,9 +22,9 @@
         <div class="master_menu_button" >
             Поделиться
         </div>
-        <div class="master_menu_button" id="start" @click="create_game">
+        <!-- <div class="master_menu_button" id="start" @click="create_game">
             Запустить игру
-        </div>
+        </div> -->
     </div>
 </div>
 </template>
@@ -34,7 +34,7 @@ import { SERVER_PATH } from '../common_const.js'
 
 export default {
   name: 'MasterMenu',
-  props: ['template_name', 'count', 'questions', 'tmpl_id'],
+  props: ['template', 'count', 'questions'],
   data () {
     return {
     }
@@ -59,61 +59,38 @@ export default {
     check_delete: function () {
       this.$emit('check-delete')
     },
-    create_game: function () {
-      this.$emit('create-game')
-    },
     back_to_templates: function () {
       this.$emit('back-to-templates')
     },
     save_tempalte_name: function () {
       this.$emit('save-tmpl-name', document.getElementById('template_name').value)
     },
-    get_questions: function () {
-      this.$emit('get-questions')
-    },
-    sleep: function (milliseconds) {
-            var start = new Date().getTime();
-            for (var i = 0; i < 1e7; i++) {
-                if ((new Date().getTime() - start) > milliseconds){
-                break;
-                }
-            }
-        },
-    save_template: function () {
-      if(!this.tmpl_id)
-      {
-        fetch(SERVER_PATH + "/board/create", {
-                method: "POST",
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: this.template_name, productWithQuestionRqs: this.questions, numFields: this.count ? this.count : 16})
-                });
-        this.sleep(300);
-        this.$emit('back-to-templates');
-      }
-      else
-      {
-        fetch(SERVER_PATH + "/board/update", {
-                method: "POST",
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id:this.tmpl_id, name: this.template_name, productWithQuestionRqs: this.questions, numFields: this.count ? this.count : 16})
-                });
-        this.sleep(300);
-        this.$emit('back-to-templates');
-      }
-      
+    save_template: async function () {
+      console.log(this.template);
+      this.template.products.forEach(item => {
+        if(item.round == 2 && item.second_round_repeating != null)
+        {
+            let result = '';
+            item.second_round_repeating.forEach(field => result = result + String(field));
+            console.log(item.second_round_repeating);
+            console.log(result);
+            item.numOfRepeating = Number(result);
+        }
+      });
+      await fetch(SERVER_PATH + "/gameBoard/update", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(this.template)
+      });
     },
   },
   mounted: function () {
   this.$nextTick(function () {
-    // Код, который будет запущен только после
-    // отображения всех представлений
     var question = document.getElementById('select_question')
     // eslint-disable-next-line camelcase
     var themes = document.getElementById('select_themes')
     themes.style.opacity = 1
     document.getElementById('select_question').value = question.style.opacity = 0.5
-    document.getElementById('template_name').value = this.template_name
-    
   })
   }
 }
@@ -152,14 +129,14 @@ export default {
 
 .master_menu_button{
     margin-top: 4%;
-    border-radius: 20px;
+    border-radius: 1vw;
     padding-top: 4%;
     padding-bottom: 4%;
     margin-left: 10%;
     width: 80%;
     color: white;
     background-color: rgb(38, 146, 17);
-    font-size: 1vw;
+    font-size: 1.1vw;
     font-weight: bold;
 }
 
@@ -172,6 +149,6 @@ export default {
 }
 
 #second_group_button{
-  margin-top: 40%;
+  margin-top: 60%;
 }
 </style>

@@ -3,7 +3,7 @@
     <div v-if="visible==2" class="all_cont">
       <div class="center_item_team">
          <div class="column_img" style="float:left;">
-            <img id="logo" :src="img_path + 'team_logo_' + String(Number(logo) + 1) + '.svg'">
+            <img id="logo" :src="img_path + 'team_logo_' + String(Number(logo) + 1) + (Number(logo) + 1 > 4 ? '.png' : '.svg')">
         </div>
         <div v-if="team_number == 'team_1'" class="name_team" @click="give_puzzle('team_1')">{{name}}</div>
         <div v-if="team_number == 'team_2'" class="name_team" @click="give_puzzle('team_2')">{{name}}</div>
@@ -17,13 +17,13 @@
               <img class="help" v-show="helps[0]" @click="up_hand" src="@/assets/help_master.png">
             </div>
             <div class="help_border" style="margin-right:15%">
-              <img class="help" v-show="helps[1]" @click="helps[1] = false" src="@/assets/help_player.png">
+              <img class="help" v-show="helps[1]" @click="use_help(1)" src="@/assets/help_player.png">
             </div>
             <div class="help_border" style="margin-left:20%">
-              <img class="help" v-show="helps[2]" @click="replace_question" src="@/assets/replace_q.png">
+              <img class="help" v-show="helps[2]" @click="use_help(2)" src="@/assets/replace_q.png">
             </div>
             <div class="help_border" style="margin-right:15%">
-              <img class="help" v-show="helps[3]" @click="replace_field" src="@/assets/replace_f.png">
+              <img class="help" v-show="helps[3]" @click="use_help(3)" src="@/assets/replace_f.png">
             </div>
         </div>
       </div>
@@ -32,13 +32,13 @@
             1 раунд
           </div>
           <div class="puzzle_2">
-            {{puzzle}}
+            {{themes.filter(item => item.color != 'background:white;').length}}
           </div>
           <div class="puzzle_3">
             /
           </div>
           <div class="puzzle_4">
-            {{unique_products.length}}
+            {{themes.length}}
           </div>
           <div class="points_1">
             2 раунд
@@ -49,7 +49,7 @@
       </div>
       <div class="bottom_item_team">
         <div class="themes1">
-            <div v-for="(item, index) in unique_products" class="themes4" :style="themes_sber[index].color" :key="index">
+            <div v-for="(item, index) in themes" class="themes4" :style="themes[index].color" :key="index">
             </div>
         </div>
         <div  class="button_themes">
@@ -69,7 +69,7 @@
       </div>
       <div class="lobby_team" id="lobby_team_1">
         <div class="scroll">
-            <div id="list_team_1" class="one_player" v-for="(option, index) in team" :key="index" :index="index">
+            <div id="list_team_1" class="one_player" v-for="(option, index) in players" :key="index" :index="index">
                 <input type="text" :value="option" class="wait_users" @blur="save_edit">
                 <div id="delete_player" @click="team.pop()">x</div>
             </div>
@@ -88,7 +88,7 @@
         </div>
       </div>
       <div class="themes2">
-        <div v-for="(item, index) in unique_products" class="themes3" :id="team_number + '_info_puzzle_' + String(index)" :style="themes_sber[index].color" :key="index">
+        <div v-for="(item, index) in themes" class="themes3" :id="team_number + '_info_puzzle_' + String(index)" :style="themes[index].color" :key="index">
           {{ item.name }}
         </div>
       </div>
@@ -106,13 +106,13 @@
             Пазлы:
           </div>
           <div class="puzzle_2">
-            {{puzzle}}
+            {{themes.filter(item => item.color != 'background:white;').length}}
           </div>
           <div class="puzzle_3">
             /
           </div>
           <div class="puzzle_4">
-            {{unique_products.length}}
+            {{themes.length}}
           </div>
       </div>
     </div>
@@ -124,57 +124,21 @@ import { SRC_PATH } from '../common_const.js'
 
 export default {
   name: 'TeamPanel',
-  props:['logo', 'name', 'team_number', 'puzzle', 'score', 'players', 'unique_products', 'tour', 'question'],
+  props:['logo', 'name', 'team_number', 'score', 'players', 'tour', 'question', 'themes', 'helps'],
   data: function () {
     return {
       img_path: SRC_PATH,
       visible: 2,
-      themes_sber: [
-          {product:'test', color:'background:white;', font:'line-height:200%;'},
-          {product:'test2', color:'background:white;', font:'line-height:200%;'},
-          {product:'test3', color:'background:white;', font:'line-height:200%;'}, 
-          {product:'СберДиск', color:'background:white;', font:'line-height:200%;'}, 
-          {product:'СберБокс', color:'background:white;', font:'line-height:200%;'}, 
-          {product:'СберМаркет', color:'background:white;', font:'font-size:78%;line-height:250%;'}, 
-          {product:'ДеливериКлаб', color:'background:white;', font:'font-size:65%;line-height:310%;'}, 
-          {product:'Самокат', color:'background:white;', font:'line-height:200%;'}, 
-          {product:'СитиМобил', color:'background:white;', font:'font-size:82%;line-height:240%;'}, 
-          {product:'СберПрайм', color:'background:white;', font:'font-size:86%;line-height:230%;'}, 
-          {product:'СберПрайм+', color:'background:white;', font:'font-size:75%;line-height:250%;'}, 
-          {product:'СберМобайл', color:'background:white;', font:'font-size:78%;line-height:250%;'}, 
-          {product:'СберЕАптека', color:'background:white;', font:'font-size:72%;line-height:280%;'}, 
-          {product:'ДомКлик', color:'background:white;', font:'line-height:200%;'}, 
-          {product:'СберЗдоровье', color:'background:white;', font:'font-size:70%;line-height:290%;'}, 
-          {product:'СберМегаМаркет', color:'background:white;', font:'font-size:56%;line-height:360%;'},
-          ],
       team: ['Игрок 1'],
-      helps: [true, true, true, true]
     }
   },
   methods: {
-    visible1 () { this.visible = 1 },
-    visible2 () { this.visible = 2;  },
-    visible3 () { this.visible = 3;  },
-    action(product, color) {
-      for(var i = 0; i < this.themes_sber.length; ++i)
-      {
-          if(this.themes_sber[i].product == product)
-              this.themes_sber[i].color = color;
-      }
-    },
-    check_color(product) {
-      for(var i = 0; i < this.themes_sber.length; ++i)
-      {
-          if(this.themes_sber[i].product == product)
-              return this.themes_sber[i].color;
-      }
-    },
-    fill_themes_sber(unique_products) {
-      this.themes_sber.length = 0;
-      for( let i = 0; i < unique_products.length; ++i)
-        this.themes_sber.push({product: unique_products[i].name, color: 'background:white;'});
-    },
+    visible1 () { this.visible = 1; },
+    visible2 () { this.visible = 2; },
+    visible3 () { this.visible = 3; },
     up_hand () {
+      if( JSON.parse(localStorage.getItem('user')).role == 'player' )
+        return;
       var current_team = this.team_number;
       var secs = 10;
       
@@ -190,22 +154,19 @@ export default {
       }
     },
     give_puzzle(team) {
+      if( JSON.parse(localStorage.getItem('user')).role == 'player' )
+        return;
         if(this.tour == 1)
-        {
-            this.$emit('give-puzzle', team, this.question[2]);
-        }
+            this.$emit('give-puzzle', team);
         else
             this.$emit('give-score', team);
         
     },
-    replace_question() {
-        this.helps[2] = false;
-        this.$emit('replace-question');
+    use_help(n) {
+      if( JSON.parse(localStorage.getItem('user')).role == 'player' )
+        return;
+        this.$emit('use-help', this.team_number, n);
     },
-    replace_field() {
-        this.helps[3] = false;
-        this.$emit('replace-field');
-    }
   },
   created () {
       if(this.players)

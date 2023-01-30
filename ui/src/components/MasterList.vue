@@ -2,7 +2,9 @@
     <div id="masters" class="select_masters">
         <input type="search" placeholder="&#128269; Поиск ведущего" class="search_masters" v-model="search_condition"/>
         <div class="scroll">
-            <div @click="select" class="option_masters" v-for="(option, index) in search_options" :key="index" v-bind:value="option.value" v-bind:id="option.value" v-bind:name="option.text">{{ option.text }}</div>
+            <div class="option_masters" v-for="(option, index) in search_options" @click="select(index, $event)" :key="index">
+                {{ option.firstName[0] + '. ' + option.patronymic[0] + '. ' + option.lastName }}
+            </div>
         </div>
     </div>
 </template>
@@ -11,7 +13,7 @@
 
 export default {
   name: 'MasterList',
-  props: ['master_chosen', 'masters'],
+  props: ['masters'],
   data(){
     return {
         selected: null,
@@ -22,60 +24,23 @@ export default {
     }
   },
   methods: {
-        select: function (element) {
-            if(this.master_chosen && this.selected == element.target)
+        select: function (index, event) {
+            var all_elements = event.target.parentElement.children;
+            for (var i = 0; i < all_elements.length; i++) 
             {
-                this.$emit('master-chosen', false, this.selected);
-                this.masters.forEach(function(item) {
-                    var id = item.value;
-                    var other_element = document.getElementById(id);
-                    other_element.style.opacity = 1;
-                });
-                return;
+                if(i != index)
+                    all_elements[i].style.opacity = 1;
+                else
+                    all_elements[i].style.opacity = 0.5;
             }
-                
-            if(!this.master_chosen)
-            {
-                this.masters.forEach(function(item) {
-                    var id = item.value;
-                    if(document.getElementById(id))
-                    {
-                        var other_element = document.getElementById(id);
-                        if(other_element != element.target)
-                        other_element.style.opacity = 0.5;
-                    }
-                    
-                });
-                this.selected = element.target;
-                this.$emit('master-chosen', true, this.selected);
-            }
-            else
-            {
-                this.masters.forEach(function(item) {
-                    var id = item.value;
-                    if(document.getElementById(id))
-                    {
-                        var other_element = document.getElementById(id);
-                        if(other_element != element.target)
-                            other_element.style.opacity = 0.5;
-                        else
-                            element.target.style.opacity = 1;
-                    }
-                });
-                
-                this.selected = element.target;
-                this.$emit('master-chosen', true, this.selected);
-            }
+            this.selected = this.masters[index];
+            this.$emit('master-chosen', true, this.selected);
         },
         unselect: function () {
-        this.masters.forEach(function(item) {
-            var id = item.value;
-            if(document.getElementById(id))
-            {
-                var other_element = document.getElementById(id);
-                other_element.style.opacity = 1;
-            }
-        });
+        var list = document.getElementsByClassName("option_masters");
+        for (var i = 0; i < list.length; i++) {
+            list[i].style.opacity = 1;
+        }
     }
     },
     created: function () {
@@ -90,7 +55,7 @@ export default {
                 this.search_condition = "";
             }
             else
-                this.search_options = this.masters.filter(option => option.text.indexOf(this.search_condition) != -1);
+                this.search_options = this.masters.filter(option => option.lastName.indexOf(this.search_condition) != -1);
         },
         masters: function () {
             this.search_options = this.masters;

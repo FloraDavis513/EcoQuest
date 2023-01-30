@@ -73,16 +73,15 @@ export default {
         {
             return;
         }
-        fetch(SERVER_PATH + "/auth/register", {
+        fetch(SERVER_PATH + "/user/create", {
             method: "POST",
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(
-                {username: username, 
+                {login: username, 
                 password: password, 
                 firstName: firstname,
-                middleName: middlename,
-                lastName: lastname,
-                role: "ROLE_LEADER"})
+                patronymic: middlename,
+                lastName: lastname})
             });
         alert("Заявка на регистрацию отправлена администатору.");
         this.$emit('already-registered');

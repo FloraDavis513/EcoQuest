@@ -1,68 +1,65 @@
 <template>
 <div id="outer_field">
     <div class="first_line">
-        <div class="start_one" id="start_one">
+        <div class="start_one" id="start_1">
         <div class="product_main_one">Старт</div>
         </div>
-        <div v-for="i in (current_template.numFields / 4)" :key="i" class="start_themes_1" :style="calc_margin_hor()">
-          <div v-if="!(field_config[i - 1].name in images)" class="product_themes_one" :id="'field_product_' + (i - 1)" :style="field_config[i - 1].colour">
-            {{ field_config[i - 1].name }}
+        <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_1" :style="calc_margin_hor()">
+          <div v-if="!(game_settings.state.field_config[i - 1].logo)" class="product_themes_one" :id="'field_product_' + (i - 1)" :style="game_settings.state.field_config[i - 1].colour">
+            {{ game_settings.state.field_config[i - 1].name }}
           </div>
-          <img v-else :id="'field_product_' + (i - 1)" :src="images[field_config[i - 1].name]" style="width:124%;height:125%;" :alt="field_config[i - 1].name">
+          <img v-else :id="'field_product_' + (i - 1)" :src="img_path + game_settings.state.field_config[i - 1].logo  + '?' + Date.now()" style="width:124%;height:125%;" :alt="game_settings.state.field_config[i - 1].name" @change="update_poses" @show="update_poses">
         </div>
-        <div class="start_two" id="start_two" :style="calc_margin_hor()">
+        <div class="start_two" id="start_2" :style="calc_margin_hor()">
         <div class="product_main_one">Старт</div>
         </div>
     </div>
     <div class="second_line">
         <div class="left_border">
-            <div v-for="i in (current_template.numFields / 4)" :key="i" class="start_themes_2" :style="calc_margin_ver_left(i)">
-              <div v-if="!(field_config[current_template.numFields - i].name in images)" class="product_themes_one" :id="'field_product_' + (current_template.numFields - i)" :style="field_config[current_template.numFields - i].colour">
-                {{field_config[current_template.numFields - i].name }}
+            <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_2" :style="calc_margin_ver_left(i)">
+              <div v-if="!(game_settings.state.field_config[game_settings.state.numFields - i].logo)" class="product_themes_one" :id="'field_product_' + (game_settings.state.numFields - i)" :style="game_settings.state.field_config[game_settings.state.numFields - i].colour">
+                {{game_settings.state.field_config[game_settings.state.numFields - i].name }}
               </div>
-              <img v-else :id="'field_product_' + (current_template.numFields - i)" :src="images[field_config[current_template.numFields - i].name]" style="width:138%;height:145%;" :alt="field_config[current_template.numFields - i].name">
+              <img v-else :id="'field_product_' + (game_settings.state.numFields - i)" :src="img_path + game_settings.state.field_config[game_settings.state.numFields - i].logo  + '?' + Date.now()" style="width:138%;height:145%;" :alt="game_settings.state.field_config[game_settings.state.numFields - i].name">
             </div>
         </div>
         <div class="inner_field">
-            <div v-if="question[1] != 'Приветствуем Вас в игре по ЭкоСистеме Сбера'" id="tour_one_question_header">
-            {{question[2]}}
+            <div v-if="current_question" id="tour_one_question_header">
+              {{current_question.product.name}}
             </div>
-            <div v-if="question[1] != 'Приветствуем Вас в игре по ЭкоСистеме Сбера'" id="tour_one_question_sub_header">
-            {{question[1]}}
+            <div v-if="current_question" id="tour_one_question_sub_header">
+              {{get_readiable_type()}}
             </div>
-            <div v-else id="tour_one_question_header" style="margin-bottom:8%;">
-            {{question[1]}}
-            </div>
-              <img v-show="turn == 0" :src="img_path + 'team_logo_' + String(Number(logos[0]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-              <img v-show="turn == 1" :src="img_path + 'team_logo_' + String(Number(logos[1]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-              <img v-show="turn == 3" :src="img_path + 'team_logo_' + String(Number(logos[2]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-              <img v-show="turn == 2" :src="img_path + 'team_logo_' + String(Number(logos[3]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 0" :src="img_path + 'team_logo_' + String(Number(logos[0]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 1" :src="img_path + 'team_logo_' + String(Number(logos[1]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 3" :src="img_path + 'team_logo_' + String(Number(logos[2]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 2" :src="img_path + 'team_logo_' + String(Number(logos[3]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
             <div id="tour_one_question_body">
-              <div class="scroll">
-                <pre>{{ question[0] }}</pre>
-              </div>
+              <textarea v-if="!current_question || current_question.question.media == null" id="greeting_message" rows="10" style="resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;" :value="current_question ? get_full_text() : game_settings.message" @blur="save_new_message" :readonly="logos.length > 0"></textarea>
+              <img v-if="current_question && current_question.question.media != null && current_question.question.media.slice(-3) == 'png'" :src="get_preview_media()" style="height: 90%;width: 100%;margin-top: 5%;">
+              <video v-if="current_question && current_question.question.media != null && current_question.question.media.slice(-3) == 'mp4'" :src="get_preview_media()" style="height: 90%;width: 100%;margin-top: 5%;" controls="controls"/>
             </div>
         </div>
         <div class="right_border">
-            <div v-for="i in (current_template.numFields / 4)" :key="i" class="start_themes_3" :style="calc_margin_ver_right(i)">
-                <div v-if="!(field_config[i - 1 + (current_template.numFields / 4)].name in images)" class="product_themes_one" :id="'field_product_' + (i - 1 + (current_template.numFields / 4))" :style="field_config[i - 1 + (current_template.numFields / 4)].colour">
-                  {{ field_config[i - 1 + (current_template.numFields / 4)].name }}
+            <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_3" :style="calc_margin_ver_right(i)">
+                <div v-if="!(game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].logo)" class="product_themes_one" :id="'field_product_' + (i - 1 + (game_settings.state.numFields / 4))" :style="game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].colour">
+                  {{ game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].name }}
                 </div>
-                <img v-else :id="'field_product_' + (i - 1 + (current_template.numFields / 4))" :src="images[field_config[i - 1 + (current_template.numFields / 4)].name]" style="width:104%;height:145%;" :alt="field_config[i - 1 + (current_template.numFields / 4)].name">
+                <img v-else :id="'field_product_' + (i - 1 + (game_settings.state.numFields / 4))" :src="img_path + game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].logo + '?' + Date.now()" style="width:104%;height:145%;" :alt="game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].name">
               </div>
         </div>
     </div>
     <div class ="third_line">
-        <div class="start_third" id="start_four">
+        <div class="start_third" id="start_4">
         <div class="product_main_one">Старт</div>
         </div>
-        <div v-for="i in (current_template.numFields / 4)" :key="i" class="start_themes_4" :style="calc_margin_hor()">
-          <div v-if="!(field_config[3*current_template.numFields/4 - i].name in images)" class="product_themes_one" :id="'field_product_' + (3*current_template.numFields/4 - i)" :style="field_config[3*current_template.numFields/4 - i].colour">
-            {{ field_config[3*current_template.numFields/4 - i].name }}
+        <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_4" :style="calc_margin_hor()">
+          <div v-if="!(game_settings.state.field_config[3*game_settings.state.numFields/4 - i].logo)" class="product_themes_one" :id="'field_product_' + (3*game_settings.state.numFields/4 - i)" :style="game_settings.state.field_config[3*game_settings.state.numFields/4 - i].colour">
+            {{ game_settings.state.field_config[3*game_settings.state.numFields/4 - i].name }}
           </div>
-          <img v-else :id="'field_product_' + (3*current_template.numFields/4 - i)" :src="images[field_config[3*current_template.numFields/4 - i].name]" style="width:124%;height:125%;" :alt="field_config[3*current_template.numFields/4 - i].name">
+          <img v-else :id="'field_product_' + (3*game_settings.state.numFields/4 - i)" :src="img_path + game_settings.state.field_config[3*game_settings.state.numFields/4 - i].logo + '?' + Date.now()" style="width:124%;height:125%;" :alt="game_settings.state.field_config[3*game_settings.state.numFields/4 - i].name">
         </div>
-        <div class="start_four" id="start_three" :style="calc_margin_hor()">
+        <div class="start_four" id="start_3" :style="calc_margin_hor()">
         <div class="product_main_one">Старт</div>
         </div>
     </div>
@@ -74,67 +71,106 @@ import { SRC_PATH } from '../common_const.js'
 
 export default {
   name: 'FirstRoundField',
-  props: ['logos', 'current_template', 'field_config', 'question'],
+  props: ['logos', 'game_settings', 'current_question'],
   data(){
     return {
         img_path: SRC_PATH,
-        collapse: true,
         current_opacity: [1,1,1,1],
-        images: {'ДеливериКлаб': SRC_PATH + 'деливериклаб.png',
-                'СберЕАптека':SRC_PATH + 'сбереаптека.png',
-                'СберЗвук':SRC_PATH + 'сберзвук.png',
-                'Okko':SRC_PATH + 'окко.png',
-                'Самокат':SRC_PATH + 'самокат.png',
-                'СберДиск':SRC_PATH + 'сбердиск.png',
-                'СберЗдоровье':SRC_PATH + 'сберздоровье.png',
-                'СберЛогистика':SRC_PATH + 'сберлогистика.png',
-                'СберМаркет':SRC_PATH + 'сбермаркет.png',
-                'СММ':SRC_PATH + 'смм.png',
-                'СберСтрахование':SRC_PATH + 'сберстрахование.png',
-                'СберМобайл':SRC_PATH + 'сбермобайл.png'}
                 
     }
   },
   methods: {
     calc_margin_hor: function () {
-        if(this.current_template.numFields == 16)
+        if(this.game_settings.state.numFields == 16)
             return "margin-left:7.1%";
-        else if(this.current_template.numFields == 20)
+        else if(this.game_settings.state.numFields == 20)
             return "margin-left:4.25%";
-        else if(this.current_template.numFields == 24)
+        else if(this.game_settings.state.numFields == 24)
             return "margin-left:2.25%";
     },
     calc_margin_ver_left: function (i) {
-        if(this.current_template.numFields == 16)
+        if(this.game_settings.state.numFields == 16)
             return "margin-top:85%";
-        else if(this.current_template.numFields == 20 && i == 1)
+        else if(this.game_settings.state.numFields == 20 && i == 1)
             return "margin-top:45%";
-        else if(this.current_template.numFields == 20)
+        else if(this.game_settings.state.numFields == 20)
             return "margin-top:60%";
-        else if(this.current_template.numFields == 24 && i == 1)
+        else if(this.game_settings.state.numFields == 24 && i == 1)
             return "margin-top:25%";
-        else if(this.current_template.numFields == 24)
+        else if(this.game_settings.state.numFields == 24)
             return "margin-top:39%";
     },
     calc_margin_ver_right: function (i) {
-        if(this.current_template.numFields == 16 && i == 1)
+        if(this.game_settings.state.numFields == 16 && i == 1)
             return "margin-top:75%";
-        if(this.current_template.numFields == 16)
+        if(this.game_settings.state.numFields == 16)
             return "margin-top:75%";
-        else if(this.current_template.numFields == 20 && i == 1)
+        else if(this.game_settings.state.numFields == 20 && i == 1)
             return "margin-top:42%";
-        else if(this.current_template.numFields == 20)
+        else if(this.game_settings.state.numFields == 20)
             return "margin-top:53%";
-        else if(this.current_template.numFields == 24 && i == 1)
+        else if(this.game_settings.state.numFields == 24 && i == 1)
             return "margin-top:24%";
-        else if(this.current_template.numFields == 24)
+        else if(this.game_settings.state.numFields == 24)
             return "margin-top:35%";
     },
     set_current_turn: function (i) {
         this.turn = i;
     },
+    save_new_message: function () {
+        this.$emit('new-message', document.getElementById('greeting_message').value);
+    },
+    get_readiable_type: function () {
+        let mapping = new Map();
+        mapping.set("TEXT", "без выбора ответа").set("AUCTION", "вопрос-аукцион").set("TEXT_WITH_ANSWERS", "с выбором ответа").set("MEDIA", "вопрос с медиа фрагментом");
+        return mapping.get(this.current_question.question.type);
+    },
+    get_preview_media: function () {
+        if(!this.current_question.question.media)
+            return null;
+        const regex = /media\d+.\w+/g;
+        const found = this.current_question.question.media.match(regex);
+        return SRC_PATH + found + '?' + Date.now();
+    },
+    get_full_text: function () {
+        let full_text = this.current_question.question.text;
+        let answers;
+        if(this.current_question.question.answers == null)
+          return full_text;
+        answers = JSON.parse(this.current_question.question.answers);
+        if(answers.AllAnswers.length == 0)
+        return full_text;
+        let all_answers = [];
+        answers.AllAnswers.forEach(item => all_answers.push(item));
+        answers.CorrectAnswers.forEach(item => all_answers.push(item));
+        this.custom_shuffle(all_answers);
+        all_answers.forEach(item => full_text += ('\n* ' + item) )
+        return full_text;
+    },
+    custom_shuffle: function (array) {
+      for (let i = array.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    },
   },
+  mounted: function() {
+    this.$emit('update-field');
+    if(this.logos.length > 0)
+        document.getElementById('greeting_message').style = 'resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;outline:none;';
+  },
+  updated: function() {
+    this.$emit('update-field');
+  }
 }
+
+// document.addEventListener("DOMNodeInserted", function () {
+//     if(document.getElementById('field_product_1'))
+//     {
+//         console.log('inserted');
+//         this.$emit('update-field');
+//     }
+// }, false);
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -268,7 +304,7 @@ pre {
   font-size: 1.35vw;
   height: 80%;
   width: 90%;
-  text-indent: 3%;
+  /* text-indent: 3%; */
 }
 
 .right_border{

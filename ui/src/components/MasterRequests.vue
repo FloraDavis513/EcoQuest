@@ -6,12 +6,28 @@
             </div>
             <div v-if="state == 'edit'">
                 <div class="group_inputs">
-                    <div class="inputs">
-                        <input id="header_fio" value="ФИО"/><input id="fio" :value="fio"/>
+                    <div class="form-group">
+                        <label class="form-label" for="name">Фамилия</label>
+                        <input type="text" class="form-control" id="lastname" placeholder="Введите фамилию" :value="selected.lastName" >
                     </div>
-                    <div class="inputs">
-                        <input id="header_fio" value="Логин"/><input id="login" :value="login"/>
+                    <div class="form-group">
+                        <label class="form-label" for="name">Имя</label>
+                        <input type="text" class="form-control" id="firstname" placeholder="Введите имя" :value="selected.firstName">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="name">Отчество</label>
+                        <input type="text" class="form-control" id="middlename" placeholder="Введите отчество" :value="selected.patronymic">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="login">Логин</label>
+                        <input type="text" class="form-control" id="login" placeholder="Введите логин" :value="selected.login">
+                    </div>
+
+                    <!-- <div class="form-group">
+                        <label class="form-label" for="password">Пароль</label>
+                        <input type="password" class="form-control" id="password" placeholder="Введите пароль" @change="change_pass">
+                    </div> -->
                 </div>
                 <div class="group_button">
                     <div v-if="draw == 'edit'" @click="edit" class="button">
@@ -25,8 +41,8 @@
                     </div>
                 </div>
             </div>
-            <div v-if="state == 'confirm_delete'">
-                <div id="delete_header">Вы уверены, что хотите удалить ведущего {{fio}}?</div>
+            <div v-if="state == 'confirm_delete'" id="delete_group">
+                <div id="delete_header">Вы уверены, что хотите удалить ведущего {{selected.firstName + ' ' + selected.patronymic + ' ' + selected.lastName}}?</div>
                 <div class="group_button">
                     <div @click="remove_old_master" class="button">
                         Да
@@ -36,15 +52,14 @@
                     </div>
                 </div>
             </div>
-            
         </div>
         <div v-else class="new_requests">
             <div class="requests_title">Заявки на добавление ведущих</div>
             <div class="scroll_1">
                 
-                <div class="option_requests" v-for="(option, index) in options" :key="index" v-bind:value="option.value" v-bind:name="option.text">
-                    <div class="master_name">{{ option.text }}</div>
-                    <center><div class="accept" @click="add"><img src="@/assets/accept.png" alt=""></div></center>
+                <div class="option_requests" v-for="(option, index) in options" :key="index" v-bind:value="option.userId" v-bind:name="option.userId">
+                    <div class="master_name">{{ option.firstName + ' ' + option.patronymic + ' ' + option.lastName }}</div>
+                    <center><div class="accept" @click="add(index)"><img src="@/assets/accept.png" alt=""></div></center>
                     <center><div class="reject" @click="remove"><img src="@/assets/reject.png" alt=""></div></center>
                 </div>
             </div>
@@ -53,59 +68,54 @@
 </template>
 
 <script>
+import { SERVER_PATH } from '../common_const.js'
+
 export default {
   name: 'MasterRequests',
-  props: ['master_chosen', 'selected', 'fio', 'login'],
+  props: ['master_chosen', 'selected'],
   data(){
     return {
-        options: [
-        { text: 'Ведущий на добавление 1', value: '13' },
-        { text: 'Ведущий на добавление 2', value: '14' },
-        { text: 'Ведущий на добавление 3', value: '15' },
-        { text: 'Ведущий на добавление 4', value: '16' },
-        { text: 'Ведущий на добавление 5', value: '17' },
-        { text: 'Ведущий на добавление 6', value: '18' },
-        { text: 'Ведущий на добавление 7', value: '19' },
-        { text: 'Ведущий на добавление 8', value: '20' },
-        { text: 'Ведущий на добавление 9', value: '21' },
-        { text: 'Ведущий на добавление 10', value: '22' },
-        { text: 'Ведущий на добавление 11', value: '23' },
-        { text: 'Ведущий на добавление 12', value: '24' },
-        ],
+        options: [ ],
         counter: 0,
         draw: 'edit',
         state: 'edit'
     }
   },
   methods: {
-        add: function (event) {
-            var added_element = event.target.parentElement.parentElement.parentElement;
-            var val = added_element.getAttribute("value");
-            var name = added_element.getAttribute("name");
-            this.$emit('add-master', name, val);
-            this.options = this.options.filter(option => option.value != val);
+        add: function (add_index) {
+            console.log(add_index);
+            var change_user = this.options[add_index];
+            this.$emit('add-master', change_user);
+            this.options = this.options.filter((option, index) => index != add_index);
+            fetch(SERVER_PATH + "/user/toActiveMaster/" + String(change_user.userId), {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                })
         },
         remove: function (event) {
-            var deleted_element = event.target.parentElement.parentElement.parentElement.getAttribute("value");
-            this.options = this.options.filter(option => option.value != deleted_element);
+            var deleted_id = event.target.parentElement.parentElement.parentElement.getAttribute("value");
+            this.options = this.options.filter(option => option.userId != deleted_id);
+            fetch(SERVER_PATH + "/user/delete/" + String(deleted_id), {
+                method: "DELETE",
+                headers: {'Content-Type': 'application/json'}
+                });
         },
         check_remove_old_master: function () {
             this.state = 'confirm_delete'
         },
         remove_old_master: function () {
-            var value = this.selected.getAttribute("value");
-            this.$emit('remove-master', value);
+            this.$emit('remove-master');
             this.state = 'edit'
         },
         cancel_delete: function () {
             this.state = 'edit'
         },
         edit: function () {
-            var fio = document.getElementById("fio");
-            var login = document.getElementById("login");
-            fio.style.pointerEvents = 'auto';
-            login.style.pointerEvents = 'auto';
             this.draw = 'save_edit';
+            var list = document.getElementsByClassName("form-control");
+            for (let item of list) {
+                item.style.pointerEvents = 'auto';
+            }
         },
         go_back: function () {
             this.$emit('go-back');
@@ -113,15 +123,39 @@ export default {
         },
         save_edit: function () {
             this.draw = 'edit';
-            var fio = document.getElementById("fio");
-            var login = document.getElementById("login");
-            fio.style.pointerEvents = 'none';
-            login.style.pointerEvents = 'none';
-            this.$emit('save-edit', fio.value);
+            var firstname = document.getElementById("firstname").value;
+            var middlename = document.getElementById("middlename").value;
+            var lastname = document.getElementById("lastname").value;
+            var login = document.getElementById("login").value;
+            var list = document.getElementsByClassName("form-control");
+            for (let item of list) {
+                item.style.pointerEvents = 'none';
+            }
+            this.$emit('save-edit', firstname, middlename, lastname, login);
         },
     },
     created: function () {
         this.counter = this.options.length;
+    },
+    beforeMount: function () {
+        let masters_ref = this.options;
+        masters_ref.length = 0;
+        this.$nextTick(function () {
+
+        fetch(SERVER_PATH + "/user/get/inactiveMasters", {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'}
+                }).then( res => res.json() ).then( data => data.forEach(function(item) {
+                   masters_ref.push(item)}) );
+        });
+    },
+    updated: function() {
+        if(this.draw == 'save_edit')
+            return;
+        var list = document.getElementsByClassName("form-control");
+        for (let item of list) {
+            item.style.pointerEvents = 'none';
+        }
     },
     watch: {
         selected: function () {
@@ -143,7 +177,7 @@ export default {
 .master_data{
     width: 100%;
     height: 90%;
-    margin-top: 3%;
+    margin-top: 4.5%;
 }
 
 .new_requests{
@@ -239,7 +273,7 @@ img:hover{
     width: 70%;
 }
 
-.inputs{
+/* .inputs{
     float: left;
     width: 83.5%;
     margin-top: 2%;
@@ -256,9 +290,9 @@ img:hover{
     outline:none;
     pointer-events: none;
     font-size: 1.3vw;
-}
+} */
 
-#header_fio{
+/* #header_fio{
     width: 8%;
     border-bottom: 1.5px solid silver;
     border-top: none;
@@ -267,7 +301,7 @@ img:hover{
     outline:none;
     pointer-events: none;
     font-size: 1.3vw;
-}
+} */
 
 .prefix input{
     width: 2%;
@@ -284,7 +318,7 @@ img:hover{
 .group_button{
     float: left;
     width: 80%;
-    margin-left: 12%;
+    margin-left: 17.5%;
     margin-bottom: 3%;
 }
 
@@ -323,5 +357,30 @@ caption{
     text-align: center;
     font-size: 1.5vw;
     width: 90%;
+}
+
+#delete_group{
+    margin-top: 4.5%;
+    float: left;
+    width: 90%;
+}
+
+.form-control{
+    width: 90%;
+    margin-left: 5%;
+    font-size: 1.3vw;
+    border-bottom: 0.1vw solid silver;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    outline:none;
+    margin-top: 0.5%;
+}
+.form-label{
+    margin-left: 5%;
+    font-size: 1.3vw;
+}
+.form-group{
+    margin-top: 3%;
 }
 </style>

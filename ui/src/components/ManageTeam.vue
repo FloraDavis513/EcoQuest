@@ -10,21 +10,21 @@
     <input v-if="team_number == 'team_4'" id="lobby_team_head_4" maxlength="10" class="team_name lobby_team_head" :placeholder="place_holder" @blur="save_team_name">
     <hr>
     <div v-if="view == 'menu'" style="width:100%;height:80%;margin-top:15%;">
-        <div class="button_menu" @click="view = 'team'">Состав команды ({{team.length}})</div>
+        <div class="button_menu" @click="view = 'team'">Состав команды ({{team_length}})</div>
         <div class="button_menu" @click="view = 'logo'">Лого команды</div>
         <img v-if="selected_logo != null" :src="logos[selected_logo]" style="width:40%;height:40%;float:left;margin-left:30%;margin-top:5%;">
     </div>
     <div v-if="view == 'team'" style="width:100%;height:100%;">
         <div class="scroll">
-            <div class="one_player" v-for="(option, index) in team" :key="index" :index="index">
-                <input :id="team_number + '_player_' + index" type="text" :placeholder="'Новый игрок'" :value="option" class="wait_users" @blur="save_edit">
-                <div id="delete_player" @click="team_pop">x</div>
+            <div class="one_player" v-for="(option, index) in items.filter((item) => item.List === Number(team_number.slice(-1)))" :key="index" :index="index">
+                <input :id="team_number + '_player_' + index" type="text" :placeholder="'Новый игрок'" :value="option.Login" class="wait_users" @blur="save_edit(option.PlayerId, $event)" draggable="true" @dragstart="startDrag($event, option)">
+                <div id="delete_player" @click="team_pop(option.PlayerId)">x</div>
             </div>
             <div id="plus_player" @click="add_player(team_number)">+</div>
         </div>
     </div>
     <div v-if="view == 'logo'" style="width:100%;height:100%;">
-        <img class="logo_option" v-for="(option, index) in logos" :src="option" :key="index" alt="" style="width:22.5%;height:22.5%;float:left;margin-left:1.6%;" @click="select_logo(index, $event)">
+        <img class="logo_option" v-for="(option, index) in logos" :src="option" :key="index" alt="" style="width:22.5%;height:22.5%;float:left;margin-left:1.5%;margin-bottom:2.5%;" @click="select_logo(index, $event)">
     </div>
 </div>
 </template>
@@ -34,38 +34,46 @@ import { SRC_PATH } from '../common_const.js'
 
 export default {
   name: 'ManageTeam',
-  props:['team', 'team_number', 'place_holder'],
+  props:['team_length', 'team_number', 'place_holder', 'items'],
   data(){
     return {
         new_added: false,
         last_added_id: null,
         view: 'menu',
         logos: [SRC_PATH + 'team_logo_1.svg', SRC_PATH + 'team_logo_2.svg',
-                SRC_PATH + 'team_logo_3.svg', SRC_PATH + 'team_logo_4.svg'],
+                SRC_PATH + 'team_logo_3.svg', SRC_PATH + 'team_logo_4.svg',
+                SRC_PATH + 'team_logo_5.png', SRC_PATH + 'team_logo_6.png',
+                SRC_PATH + 'team_logo_7.png', SRC_PATH + 'team_logo_8.png'],
         selected_logo: null
     }
   },
   methods: {
+        startDrag: function (event, option) {
+            this.$emit('start-drag', event, option);
+        },
         select_logo: function (index, event) {
             var logo_arr = event.target.parentElement.children;
             for( var i = 0; i < logo_arr.length; ++i )
+            {
                 logo_arr.item(i).style.border = '';
+                logo_arr.item(i).style.marginBottom = '2.5%';
+            }
             event.target.style.border = 'solid 0.01vw black';
+            if(index !== 3)
+                event.target.style.marginBottom = '2%';
             let mapping = new Map();
             mapping.set("team_1", 0).set("team_2", 1).set("team_3", 2).set("team_4", 3);
             this.selected_logo = index;
             this.$emit('set-logo', mapping.get(this.team_number), index);
         },
-        team_pop: function () {
-            this.$emit('team-pop', this.team_number);
+        team_pop: function (id) {
+            this.$emit('team-pop', id);
         },
         add_player: function () {
-            this.new_added = true;
-            this.last_added_id = this.team_number + '_player_' + Number(this.team.length);
             this.$emit('add-player', this.team_number);
         },
-        save_edit: function (event) {
-            this.$emit('save-edit', this.team_number, event.target.parentElement.getAttribute('index'), event.target.value);
+        save_edit: function (id, event) {
+            this.$emit('save-edit', id, event.target.value);
         },
         save_team_name: function () {
             let value;
@@ -176,7 +184,7 @@ hr{
 .button_menu{
     text-align: center;
     font-size: 1.5vw;
-    margin-top: 5%;
+    margin-top: 7.5%;
     height: 10%;
     width: 100%;
 }

@@ -35,59 +35,30 @@
         </div>
     </div>
     <div v-if="user_type == 'User'" id="login_user">
-        <input class="form-group" placeholder="id комнаты">
-        <input class="form-group" placeholder="Ваше имя">
+        <input class="form-group" id="room_id" placeholder="id комнаты">
+        <input class="form-group" id="player_name" placeholder="Ваше имя">
         <div :style="'visibility:' + check_failed()" id="failed_message_user">Неверный id комнаты</div>
-        <div id="enter" @click="test_action">
+        <div id="enter" @click="log_in_player">
             Войти
         </div>
         <div id="user_message">
                 Для входа запросите id комнаты у своего ведущего
         </div>
     </div>
-    <!-- <form @submit.prevent="log_in">
-      <div v-if="user_type == 'Master'" id="login_master">
-        <input class="form-group" id="email_master" name="username" placeholder="Логин/E-mail">
-        <input type="password" class="form-group" id="password" name="password" placeholder="Пароль">
-        <div :style="'visibility:' + check_failed()" id="failed_message_master">Неверный логин или пароль</div>
-        <input type="submit" id="enter" value="Войти">
-        <div id="get_pass">
-          Забыли пароль?
-        </div>
-        <div id="registration">
-          <div id="reg_text">
-            У вас ещё нет аккаунта?
-          </div>
-          <div id="go_to_reg">
-            Зарегистрируйтесь
-          </div>
-        </div>
-      </div>
-    </form>
-    <div v-if="user_type == 'User'" id="login_user">
-        <input class="form-group" placeholder="id комнаты">
-        <input class="form-group" placeholder="Ваше имя">
-        <div :style="'visibility:' + check_failed()" id="failed_message_user">Неверный id комнаты</div>
-        <div id="enter" @click="test_action">
-            Войти
-        </div>
-        <div id="user_message">
-                Для входа запросите id комнаты у своего ведущего
-        </div>
-    </div> -->
   </div>
 </div>
 </template>
 
 <script>
-// import {SERVER_PATH} from "@/common_const";
+import {SERVER_PATH} from "@/common_const";
 
 export default {
   name: 'AuthWin',
   data(){
     return {
         user_type: 'Master',
-        failed: false
+        failed: false,
+        game: null
     }
   },
   methods: {
@@ -106,30 +77,60 @@ export default {
             this.user_type = 'User'
             document.getElementById('failed_message_master').style.visibility = 'hidden';
         },
-        // log_in: function () {
-        //   let email = document.getElementById('email_master').value;
-        //   let password = document.getElementById('password').value;
-        //   let formData = new FormData()
-        //   formData.append("username", email)
-        //   formData.append("password", password)
-        //     if(email == 'ведущий' && password == 'ведущий123')
-        //         this.$emit('login-master');
-        //     else if(email == 'admin' && password == 'admin')
-        //       fetch(`${SERVER_PATH}/auth/login`, {
-        //         method: 'POST',
-        //         body: formData,
-        //       }).then( res => {res.json(); this.$emit('login-admin')} )
-        //           .then( data => console.log(data) );
-        // },
-        log_in: function () {
+        log_in: async function () {
             var email = document.getElementById('email_master').value;
             var password = document.getElementById('password').value;
-            if(email == 'ведущий' && password == 'ведущий123')
+            await fetch(SERVER_PATH + '/authentication/login/master', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({login:email, password:password}),
+              })
+              .then(response => {
+                    if (response.status == 404 || response.status == 401) {
+                        this.failed = true;
+                        return {};
+                    }
+                    this.failed = false;
+                    return response.json();
+                })
+              .then( data => localStorage.setItem('user', JSON.stringify(data)));
+            if(JSON.parse(localStorage.getItem('user')).role == 'master')
                 this.$emit('login-master');
-            else if(email == 'админ' && password == 'админ123')
+            if(JSON.parse(localStorage.getItem('user')).role == 'admin')
                 this.$emit('login-admin');
-            else
-                this.failed = true;
+        },
+        log_in_player: async function () {
+            var room_id = document.getElementById('room_id').value;
+            var player_name = document.getElementById('player_name').value;
+            await fetch(SERVER_PATH + '/authentication/login/player', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({gameId:room_id, login:player_name}),
+              })
+              .then(response => {
+                    if (response.status == 404 || response.status == 401) {
+                        this.failed = true;
+                        return {};
+                    }
+                    return response.json();
+                })
+              .then( data => localStorage.setItem('user', JSON.stringify(data)));
+
+            //   await fetch(SERVER_PATH + "/game/get/" + String(room_id), {
+            //     method: "GET",
+            //     headers: {'Content-Type': 'application/json'}
+            //     }).then( res => res.json() ).then( data => this.game = data );
+            // this.game.state = JSON.parse(this.game.state);
+            // this.game.state.joined_players.push({name: player_name, id: player_name + String(Date.now())});
+
+            await fetch(SERVER_PATH + '/game/state/players/create/' + room_id, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({Login:player_name, List: 0}),
+              });
+              localStorage.setItem('room_id', room_id)
+
+              this.$emit('create-game', room_id);
         },
         check_failed: function () {
             if(this.failed)
@@ -142,6 +143,7 @@ export default {
         },
   },
   mounted: function () {
+    localStorage.clear();
   this.$nextTick(function () {
     // Код, который будет запущен только после
     // отображения всех представлений

@@ -1,6 +1,6 @@
 <template>
-    <div v-if="draw == 'grid'" class="grid" id="grid">
-        <div class="grid_element" v-for="(option, index) in template_list" :key="index" :index="index" @click="select_template">{{ option.text }}</div>
+    <div class="grid" id="grid">
+        <div class="grid_element" v-for="(option, index) in template_list" :key="index" :index="index" @click="select_template(index)">{{ option.name }}</div>
         <div class="grid_element plus" @click="add_template">+</div>
     </div>
 </template>
@@ -11,16 +11,14 @@ export default {
   props:['template_list'],
   data(){
     return {
-        draw: 'grid',
-        current_template: null,
     }
   },
   methods: {
         add_template: function () {
             this.$emit('add-template');
         },
-        select_template: function (event) {
-            this.$emit('select-template', this.template_list[event.target.getAttribute('index')]);
+        select_template: function (index) {
+            this.$emit('select-template', this.template_list[index]);
         },
   }
 }

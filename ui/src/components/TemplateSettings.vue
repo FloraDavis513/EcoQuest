@@ -3,27 +3,28 @@
     <div class="scroll"><pre>{{ preview_text }}</pre></div>
 </div>
 <div v-if="visible==5" id="game_list">
-  
   <div class="scroll" style="width:78%;margin-top:5%;height:100%;">
       <img @click="to_games" src="@/assets/go_back.png" style="float:left;width:5%;height:10%;" alt="">
       <div style="width:100%;height:10%;margin-left:10%;margin-top:2%;">
-          <div style="width:10%;float:left;height:100%;">
-            <div style="font-size:1.2vw;width:30%;height:50%;">Id</div>
-            <input type="text" style="font-size:1.2vw;width:60%;" readonly id="game_id" :value="current_game[1]">
+          <div style="width:20%;float:left;height:40%;margin-right:50%;">
+            <div style="font-size:1.2vw;width:50%;height:35%;">{{'Id: ' + current_game.gameId}}</div>
+            <!-- <div type="text" style="font-size:1.2vw;width:60%;" id="game_id" :value="current_game.gameId"/> -->
           </div>
-          <div style="width:20%;float:left;height:100%;margin-right:50%;">
-            <div style="font-size:1.2vw;width:60%;height:50%;">Дата</div>
-            <input type="text" style="font-size:1.2vw;" id="game_date" :value="current_game[0]">
-          </div>
-          <div style="width:33.1%;float:left;height:100%;margin-top:1.5%;">
+          <div style="width:33%;float:left;height:100%;margin-top:1.5%;">
             <div style="font-size:1.2vw;width:70%;height:50%;">Название</div>
-            <input type="text" style="font-size:1.2vw;width:80%;" id="game_name" value="111">
+            <input type="text" style="font-size:1.2vw;width:100%;" id="game_name" @blur="save_game_data" :value="current_game.name">
+          </div>
+          <div style="width:33.5%;float:left;height:100%;margin-right:50%;margin-top:1%;">
+            <div style="font-size:1.2vw;width:100%;height:50%;" @blur="save_game_data">Дата</div>
+            <Datepicker v-model="date" :format-locale="ru" locale="ru" select-text="Подтвердить" cancel-text="Закрыть"/>
           </div>
       </div>
-      <FirstRoundField style="top:12%;left:52.5%;transform: scale(0.85);" :logos="[]" :current_template="current_template" :field_config="field_config" :question="question" />
-      <div class="game_buttons" style="top:45%;left:22.5%;" id="save_game_button">Сохранить</div>
-      <div class="game_buttons" style="top:45%;left:39%;" id="save_game_button">Удалить</div>
-      <div class="game_buttons" style="top:55%;left:31%;" id="shuffle_button" @click="custom_shuffle(field_config)">Перемешать</div>
+      <FirstRoundField style="top:12%;left:52.5%;transform: scale(0.85);" @new-message="update_message" :logos="[]" :current_template="template" :game_settings="current_game" />
+      <div class="game_buttons" style="top:64.75%;left:22.5%;" id="save_game_button" @click="reset_game">Сброс</div>
+      <div class="game_buttons" style="top:84.75%;left:22.5%;" id="save_game_button" @click="save_game">Сохранить</div>
+      <div class="game_buttons" style="top:84.75%;left:39%;" id="save_game_button" @click="delete_game">Удалить</div>
+      <div class="game_buttons" style="top:92%;left:22.5%;" id="shuffle_button" @click="custom_shuffle(current_game.state.field_config)">Перемешать</div>
+      <div class="game_buttons" style="top:92%;left:39%;" id="start_button" @click="create_game">Начать</div>
   </div>
 </div>
 <div v-if="visible==4" id="game_list">
@@ -44,12 +45,12 @@
     </div>
 </div>
 <div v-if="visible==1" class="item_block_scroll">
-      <div v-for="(product,index) in products" :key="index" id="size_themes">
-        <div class="themes_themes" :style="get_color(product)" >
+      <div v-for="(product,index) in get_products_by_round()" :key="index" id="size_themes">
+        <div class="themes_themes" :style="product.colour" >
             <div class="text_themes" >
               {{product.name}}
             </div>
-            <button class="button_themes" v-on:click="product.visible_question=!product.visible_question"><img class="polygon" src="@/assets/Polygon_1.png" @click="rotate"></button>
+            <button class="button_themes" @click="expand_product(product, $event)"><img class="polygon" src="@/assets/Polygon_1.png"></button>
         </div>
         <div class="quest_themes" v-show="product.visible_question">
             <div class="last_redaction" style="font-weight: bold;text-decoration: underline;text-align:center;margin-left: 4%;">
@@ -62,26 +63,26 @@
               Тип
             </div>
             <div class="check_quest">
-                <input class="check_quest_2" type="checkbox">
+                <input :id="'product_check_' + index" class="check_quest_2" type="checkbox" :checked="product.activeQuestions.length != 0" @click="change_all_status(product.productId)">
             </div>
         </div>
-        <div v-for="(question,index) in product.questions" :key="index" class="quest_themes" v-show="product.visible_question" >
+        <div v-for="(question,question_index) in product.allQuestions" :key="question_index" class="quest_themes" v-show="product.visible_question" >
             <div class="last_redaction" @click="show_question(question.text, question.answer)">
-              11.11.11
+              {{question.lastEditDate}}
             </div>
             <div class="name_quest2" @click="show_question(question.text, question.answer)">
               {{question.shortText}}
             </div>
             <div class="type_quest" @click="show_question(question.text, question.answer)">
-              {{get_readiable_type(question.questionType)}}
+              {{get_readiable_type(question.type)}}
             </div>
             <div class="check_quest">
-                <input class="check_quest_2" type="checkbox" :checked="question.Need_quest" v-on:click="question.Need_quest= !question.Need_quest">
+                <input class="check_quest_2" type="checkbox" :checked="product.activeQuestions.includes(question.questionId)" @click="change_status(product.productId, question.questionId, index)">
             </div>
         </div>
       </div>
 </div>
-<div v-if="visible==2" class="item_block">
+<div v-if="visible == 2 && current_round == 1" class="item_block">
   <div class="count_field">
       <div class="text_fields">
         Число игровых полей
@@ -117,7 +118,7 @@
   </div>
   <div class="item_block_scroll_2" >
       <div class="block_all_themes_filed" >
-        <div v-for="(product,index) in products.filter(option => option.name != 'Финал' && option.name != 'Полуфинал')" :key="index" id="size_themes_2" >
+        <div v-for="(product,index) in get_products_by_round()" :key="index" id="size_themes_2" >
               <div class="themes_themes_2" :style="product.colour">
                   <div class="text_fields_themes" >
                     {{product.name}}
@@ -125,7 +126,7 @@
                   <form style="height:100%;">
                     <div class="radio_text_2">
                       <div v-for="(r_butt,index) in radio_buttons" :key="index" style="height:100%;float:left;width:10%">
-                          <input type="radio" class="radio_fields_2" name="Fields_Count" v-on:click="product.count = r_butt, product.current_checked = index, count_field_now()" style="float:left;" :checked="product.current_checked == index">
+                          <input type="radio" class="radio_fields_2" name="Fields_Count" @click="product.numOfRepeating = r_butt, product.current_checked = index, count_field_now()" style="float:left;" :checked="product.numOfRepeating == index">
                           <label style="float:left;margin-top:1%;">{{r_butt}}</label>
                       </div>
                     </div>
@@ -135,15 +136,36 @@
       </div>
   </div>
 </div>
+<div v-if="visible == 2 && current_round == 2" class="item_block">
+  <div :id="'start_sec_round_' + index" class="questions start_sec_round" style="margin-left:8.5%;">Старт</div>
+  <div v-for="(q_item, q_index) in second_round_bar" :key="q_index" class="questions" :id="'second_round_question_' + String(index) + String(q_index)">
+    <select style="width:90%;height:20%;margin-left:5%;margin-top:40%;font-size:1vw;" :id="'type_selector_' + q_index" @input="select_second_round_product(q_index)">
+      <option>Не выбрано</option>
+      <option v-for="(product_item, product_index) in get_products_by_round()" :key="product_index">{{product_item.name}}</option>
+    </select>
+    <img v-if="check_bar(q_index)" src="@/assets/accept.png" style="width:20%;height:20%;margin-left:40%;margin-top:5%;">
+  </div>
+  <!-- <div :id="'finish_' + index" class="questions"><img src="@/assets/cup.png" id="cup" style="width:90%;height:90%;margin-left:5%;margin-top:5%;"></div> -->
+  <div :id="'finish_' + index" class="questions">
+    <select style="width:90%;height:20%;margin-left:5%;margin-top:40%;font-size:1vw;" :id="'type_selector_5'" @input="select_second_round_product(5)">
+      <option v-for="(product_item, product_index) in get_products_by_round()" :key="product_index">{{product_item.name}}</option>
+    </select>
+    <img src="@/assets/cup.png" id="cup" style="width:20%;height:20%;margin-left:40%;margin-top:5%;">
+  </div>
+</div>
 </template>
 
 <script>
 import { SERVER_PATH } from '../common_const.js'
 import FirstRoundField from './FirstRoundField.vue'
+import Datepicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css'
+import { parse } from 'date-fns';
+
 
 export default {
   name: 'TemplateSettings',
-  props: ['visible', 'id'],
+  props: ['visible', 'template', 'current_round'],
   data () {
     return {
       name_template: '',
@@ -158,29 +180,238 @@ export default {
       template_products: [],
       preview_question: false,
       preview_text: '',
-      game_list: [{name:'game 1', id:1111, date:'11.02.1999', description:'Amazing game'}, {name:'game 2', id:2222, date:'31.07.1975', description:'Amazing game 2'}],
+      game_list: [],
       current_game: ['', '', ''],
       question: ['','','',''],
-      field_config: [ {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, 
-                        {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, 
-                        {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, 
-                        {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, {name:'1'}, ],
+      date: null,
+      second_round_bar: [false, false, false, false, false],
+      second_round_filled: false
     }
   },
   components: {
-    FirstRoundField
+    FirstRoundField,
+    Datepicker
   }, 
   methods: {
+    check_bar: function(index) {
+      return this.second_round_bar[index];
+    },
+    fill_second_round_bar: function()
+    {
+        if(this.second_round_filled)
+          return;
+        if(!document.getElementById('type_selector_0'))
+          return;
+        this.second_round_filled = true;
+        let second_round = ['Не выбрано', 'Не выбрано', 'Не выбрано', 'Не выбрано', 'Не выбрано', 'Не выбрано'];
+        this.template.products.filter((item) => item.round == 2).forEach(item => {
+          if(item.numOfRepeating > 0)
+            String(item.numOfRepeating).split('').forEach(char => {
+              second_round[Number(char) - 1] = item.name;
+              if(item.second_round_repeating == null)
+                item.second_round_repeating = new Set();
+              item.second_round_repeating.add(Number(char));
+              });
+        });
+        for(let i = 0; i < 6; ++i)
+        {
+          if(i < 5)
+            this.second_round_bar[i] = second_round[i] != 'Не выбрано';
+          document.getElementById('type_selector_' + i).value = second_round[i];
+        }
+    },
+    select_second_round_product: function(index)
+    {
+      if(!document.getElementById('type_selector_' + index))
+        return;
+      let selector = document.getElementById('type_selector_' + index);
+      if(index < 5)
+      this.second_round_bar[index] = selector.value != 'Не выбрано';
+
+      console.log(this.get_products_by_round());
+      this.get_products_by_round().forEach(item => {
+        if(item.name == selector.value)
+        {
+          if(item.second_round_repeating == null)
+            item.second_round_repeating = new Set();
+          item.second_round_repeating.add(index + 1);
+        }
+        else
+        {
+          if(item.second_round_repeating != null)
+            item.second_round_repeating.delete(index + 1);
+        }
+      });
+
+      console.log(this.get_products_by_round());
+    },
+    get_products_by_round: function()
+    {
+        return this.template.products.filter((item) => item.round == this.current_round)
+    },
+    create_game: function () {
+      this.$emit('create-game', this.current_game.gameId);
+    },
+    change_status: function (product_id, question_id, product_index) {
+      let global_checked;
+      this.template.products.forEach(product => {
+        if(product_id == product.productId)
+        {
+            if(product.activeQuestions.includes(question_id))
+              product.activeQuestions = product.activeQuestions.filter(item => item != question_id);
+            else
+              product.activeQuestions.push(question_id);
+            global_checked = product.activeQuestions.length != 0;
+        }
+      });
+      document.getElementById('product_check_' + product_index).checked = global_checked;
+    },
+    change_all_status: function (product_id) {
+      this.template.products.forEach(product => {
+        if(product_id == product.productId)
+        {
+            if(product.activeQuestions.length != 0)
+              product.activeQuestions.length = 0;
+            else
+            {
+              product.allQuestions.forEach(question => {
+                product.activeQuestions.push(question.questionId);
+              })
+            }
+        }
+      });
+    },
     to_games: function () { 
       this.$emit('games');
     },
-    select_game: function (index) { 
+    select_game: async function (index) { 
+      await fetch(SERVER_PATH + "/game/get/" + String(this.game_list[index].gameId), {
+        method: "GET",
+        headers: {'Content-Type': 'application/json'}
+      }).then( res => res.json() ).then( data => this.current_game = data );
+      this.current_game.state = JSON.parse(this.current_game.state);
+      this.date = parse(this.current_game.date, 'M/d/yyyy, hh:mm:ss aa', new Date());
+      console.log(this.current_game);
       this.$emit('show-game');
-      this.current_game = this.game_list[index];
-      document.getElementById('game_name').value = 666;
     },
-    add_game: function () { 
-      this.game_list.push("game " + Number(Number(this.game_list.length) + Number(1)));
+    generate_config: function () {
+      let config = [];
+      this.get_products_by_round().forEach(item => {
+          for( let i = 0; i < item.numOfRepeating; ++i )
+          {
+            const regex = /logo\d+.\w+/g;
+            const found = item.logo ? item.logo.match(regex) : null;
+            console.log({name:item.name, colour:item.colour, logo:found ? found[0] : found});
+            config.push({name:item.name, colour:item.colour, logo:found ? found[0] : found});
+          }
+      });
+      this.custom_shuffle(config);
+      return {field_config: config};
+    },
+    generate_second_round_config: function () {
+      let second_round = [null, null, null, null, null, null];
+      this.template.products.filter((item) => item.round == 2).forEach(item => {
+        if(item.numOfRepeating > 0)
+          String(item.numOfRepeating).split('').forEach(char => {
+            second_round[Number(char) - 1] = item;
+            });
+      });
+
+      return second_round;
+    },
+    add_game: async function () {
+      let current_date = new Date();
+      let date_string = current_date.toLocaleString('en-US', { timeZone: 'Asia/Yekaterinburg' });
+      let save_date = parse(date_string, 'dd.MM.yyyy, HH:mm:ss', new Date());
+      console.log(date_string);
+      console.log(save_date);
+      let base_config = this.generate_config();
+      base_config['numFields'] = this.template.numFields;
+      base_config['second_round_config'] = this.generate_second_round_config();
+      base_config['questions_round_1'] = this.generate_questions_round_1();
+      base_config['Players'] = [];
+      base_config['template_id'] = this.template.gameBoardId;
+      await fetch(SERVER_PATH + "/game/create", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({userId:JSON.parse(localStorage.getItem('user')).userId, name:'Новая игра', message:'Приветственное сообщение', date: date_string, state: JSON.stringify(base_config)})
+      });
+      this.read_games();
+    },
+    reset_game: async function () {
+      if( typeof(this.current_game.state) == 'string' )
+            this.current_game.state = JSON.parse(this.current_game.state);
+      delete this.current_game.state['current_chip_poses'];
+      delete this.current_game.state['current_number'];
+      delete this.current_game.state['current_question'];
+      delete this.current_game.state['themes'];
+      delete this.current_game.state['teams'];
+      delete this.current_game.state['helps'];
+      delete this.current_game.state['price'];
+      delete this.current_game.state['number_round'];
+      delete this.current_game.state['scores'];
+      delete this.current_game.state['timer'];
+      delete this.current_game.state['crit_timer'];
+      this.current_game.state['Players'] = [];
+      fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({gameId:this.current_game.gameId, state:JSON.stringify(this.current_game.state), currentQuestionId: null}),
+            });
+    },
+    save_game: async function () {
+      this.current_game.state.questions_round_1 = this.generate_questions_round_1();
+      this.current_game.state.numFields = this.template.numFields;
+      this.current_game.state.joined_players = [];
+      // this.current_game.state.field_config = this.field_config;
+      console.log(this.current_game.state);
+      this.current_game.state = JSON.stringify(this.current_game.state);
+      this.current_game.date = this.date.toLocaleString('en-US', { timeZone: 'Asia/Yekaterinburg' });
+      await fetch(SERVER_PATH + "/game/update", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(this.current_game)
+      });
+      this.current_game.state = JSON.parse(this.current_game.state);
+    },
+    generate_questions_round_1: function () {
+      let result = {};
+
+      this.get_products_by_round().forEach(product => {
+          let product_with_questions = JSON.parse(JSON.stringify(product));
+          product_with_questions.questions = product_with_questions.allQuestions.filter( question => product.activeQuestions.includes(question.questionId) );
+          // delete product_with_questions.allQuestions;
+          // delete product_with_questions.activeQuestions;
+          if(product_with_questions.questions.length > 0)
+              result[product_with_questions.name] = product_with_questions.questions;
+      });
+
+      return result;
+    },
+    delete_game: async function () {
+      await fetch(SERVER_PATH + "/game/delete/" + String(this.current_game.gameId), {
+        method: "DELETE",
+        headers: {'Content-Type': 'application/json'},
+      });
+      this.read_games();
+      this.$emit('games');
+    },
+    save_game_data: function () {
+      this.current_game.name = document.getElementById('game_name').value;
+      this.current_game.date = document.getElementById('game_date').value;
+    },
+    update_message: function (new_message) {
+      this.current_game.message = new_message;
+    },
+    read_games: async function () {
+      let all_games;
+      this.game_list.length = 0;
+      await fetch(SERVER_PATH + "/game/get/all/" + String(JSON.parse(localStorage.getItem('user')).userId), {
+        method: "GET",
+        headers: {'Content-Type': 'application/json'}
+      }).then( res => res.json() ).then( data => all_games = data );
+
+      this.game_list = all_games.filter(item => JSON.parse(item.state).template_id == this.template.gameBoardId);
     },
     show_question: function (text, ans) { 
       this.preview_text = 'Вопрос:\n' + text + '\n\nОтвет:\n' + ans;
@@ -188,9 +419,9 @@ export default {
     },
     calc_sum_field: function () { 
       let tmp = 0;
-      for (let field = 0; field < this.products.length; ++field) 
+      for (let field = 0; field < this.get_products_by_round().length; ++field) 
       {
-        tmp = tmp + this.products[field].count;
+        tmp = tmp + this.get_products_by_round()[field].numOfRepeating;
       }
       
       if(document.getElementById('total_field') && tmp > this.count_field)
@@ -215,9 +446,9 @@ export default {
       this.count_field_now();
     },
     count_field_now: function () { // подсчет текущего количества выбранных полей
-      this.count_field_now_pole = 0
-      for (var field = 0; field < this.products.length; field++) {
-        this.count_field_now_pole = this.count_field_now_pole + this.products[field].count
+      this.count_field_now_pole = 0;
+      for (var field = 0; field < this.get_products_by_round().length; field++) {
+        this.count_field_now_pole = this.count_field_now_pole + this.get_products_by_round()[field].numOfRepeating;
       }
       this.progress_bar()
     },
@@ -225,133 +456,29 @@ export default {
       this.progress = this.count_field_now_pole / this.count_field * 100
       if (this.progress > 100) this.progress = 100
       this.progress = String(this.progress) + '%'
-      document.getElementById('progress_1').style = 'width:' + this.progress
+      if(document.getElementById('progress_1'))
+        document.getElementById('progress_1').style = 'width:' + this.progress
     },
-    rotate: function (event) {
-      if(event.target.style.transform == 'rotate(180deg)')
-        event.target.style = 'transform:rotate(0deg);';
+    expand_product: function (product, event) {
+      product.visible_question = !product.visible_question;    
+      let finded_target = event.target.className == 'polygon' ? event.target : event.target.firstElementChild;
+      if(finded_target.style.transform == 'rotate(180deg)')
+        finded_target.style = 'transform:rotate(0deg);';
       else
-        event.target.style = 'transform:rotate(180deg);';
+        finded_target.style = 'transform:rotate(180deg);';
     },
     get_readiable_type: function (type) {
       let mapping = new Map();
       mapping.set("TEXT", "Без выбора ответа").set("AUCTION", "Вопрос-аукцион").set("TEXT_WITH_ANSWERS", "С выбором ответа").set("MEDIA", "Вопрос с медиа фрагментом");
       return mapping.get(type);
     },
-    get_color: function (product) {
-      if(product.name == "Финал" || product.name == "Полуфинал")
-        return "background-color:#bebebe;color:black;"
-      else
-        return product.colour;
-    },
-    save_template_product: function (data) {
-      this.current_template = data;
-      this.template_products = this.current_template.products;
-      this.count_field = this.current_template.numFields;
-      let ar_ref = this.field_config;
-      ar_ref.length = 0;
-      this.current_template.products.forEach(element => {
-          for( let i = 0; i < element.numOfRepeating; ++i )
-            ar_ref.push(element);
-      });
-      this.custom_shuffle(this.field_config);
-      fetch(SERVER_PATH + "/product/getAll", {
-              method: "GET",
-              headers: {'Content-Type': 'application/json'}
-              }).then( res => res.json() ).then( data => this.save_all_product(data) );
-
-      if(this.current_template.numFields == 16)
-      {
-        document.getElementById("Choice1").checked = true;
-        this.count_field_16();
-      }
-      if(this.current_template.numFields == 20)
-      {
-        document.getElementById("Choice2").checked = true;
-        this.count_field_20();
-      }
-      if(this.current_template.numFields == 24)
-      {
-        document.getElementById("Choice3").checked = true;
-        this.count_field_24();
-      }
-    },
-    save_all_product: function (data) {
-      this.products = data;
-      if(!this.id)
-      {
-        this.products.forEach(element => {
-          if(element.name == 'Финал' || element.name == 'Полуфинал')
-          {
-            element.current_checked = 0;
-            element.count = 0;
-          }
-          else
-          {
-            element.current_checked = 1;
-            element.count = 1;
-          }
-          element.visible_question = true;
-          element.questions.forEach( question => {
-            question.Need_quest = true;
-          });
+    delete_tmpl: async function () {
+        await fetch(SERVER_PATH + "/gameBoard/delete/" + String(this.template.gameBoardId), {
+            method: "DELETE",
+            headers: {'Content-Type': 'application/json'}
         });
-      }
-      else
-      {
-        this.products.forEach(element => {
-          element.visible_question = false;
-          element.current_checked = 0;
-          element.count = 0;
-          element.questions.forEach( question => {
-            question.Need_quest = false;
-          });
-          this.template_products.forEach(template_element => { 
-            if( template_element.id == element.id )
-            {
-              element.current_checked = template_element.numOfRepeating;
-              element.count = template_element.numOfRepeating;
-              element.questions.forEach( question => {
-                template_element.questions.forEach( template_question => {
-                    if(question.id == template_question.id)
-                      question.Need_quest = true;
-                 });
-              });
-            }
-          });
-        });
-      }
-    },
-    get_product: function () {
-      let result = [];
-      this.products.forEach(element => {
-        let cur_id = element.id;
-        let cur_count = element.count;
-        let cur_qs = [];
-        element.questions.forEach( question => {
-            if(question.Need_quest)
-              cur_qs.push(question.id);
-          });
-        result.push({productId: cur_id, numberOfRepeating: cur_count, questionIds: cur_qs});
-      });
-      return result;
-    },
-    delete_tmpl: function () {
-      fetch(SERVER_PATH + "/board/delete/" + String(this.current_template.id), {
-                method: "DELETE",
-                headers: {'Content-Type': 'application/json'}
-                });
-        this.sleep(300);
         this.$emit('back-to-templates');
     },
-    sleep: function (milliseconds) {
-            var start = new Date().getTime();
-            for (var i = 0; i < 1e7; i++) {
-                if ((new Date().getTime() - start) > milliseconds){
-                break;
-                }
-            }
-        },
     cancel_tmpl: function () {
       this.$emit('to-questions');
     },
@@ -363,29 +490,18 @@ export default {
     },
   },
   mounted: function () {
-      let products_ref = this.products;
-      products_ref.length = 0;
-      let id = this.id;
-      if(id)
-        fetch(SERVER_PATH + "/board/get/" + String(id), {
-              method: "GET",
-              headers: {'Content-Type': 'application/json'}
-              }).then( res => res.json() ).then( data => this.save_template_product(data) );
-      else
-        fetch(SERVER_PATH + "/product/getAll", {
-              method: "GET",
-              headers: {'Content-Type': 'application/json'}
-              }).then( res => res.json() ).then( data => this.save_all_product(data) );
-    this.$nextTick(function () {
-    // Код, который будет запущен только после
-    // отображения всех представлений
-      this.count_field_now();
-    })
+    this.count_field = this.template.numFields;
+    this.count_field_now();
+    //this.fill_second_round_bar();
   },
   updated: function () {
+    // this.fill_second_round_bar();
     this.$nextTick(function () {
     // Код, который будет запущен только после
     // отображения всех представлений
+      this.fill_second_round_bar();
+      if(!document.getElementById("Choice1"))
+          return;
       this.count_field_now();
       if(this.count_field == 16)
       {
@@ -401,7 +517,7 @@ export default {
       {
         document.getElementById("Choice3").checked = true;
         this.count_field_24();
-      }
+      } 
     })
   }
 }
@@ -477,7 +593,7 @@ export default {
 
 .block_all_themes_filed{
    width: 99%;
-   height: 70%;
+   height: 82.5%;
    float: left;
 }
 
@@ -587,7 +703,7 @@ export default {
 }
 
 .item_block_scroll_2{
-    height: 70%;
+    height: 60%;
     width: 100%;
     float: left;
     overflow: auto;
@@ -931,7 +1047,7 @@ pre {
     margin-bottom: 5%;
     float: left;
     width: 20%;
-    height: 20%;
+    height: 22.5%;
     border: 2px solid black;
     border-radius: 20px;
     text-align: center;
@@ -957,12 +1073,12 @@ pre {
 
 .game_buttons{
   border-radius: 1vw;
-  padding-top: 0.75%;
-  padding-bottom: 0.75%;
-  width: 15%;
+  padding-top: 0.8%;
+  padding-bottom: 0.8%;
+  width: 15.85%;
   color: white;
   background-color: green;
-  font-size: 1.2vw;
+  font-size: 1.1vw;
   font-weight: bold;
   position: absolute;
   text-align: center;
@@ -978,5 +1094,24 @@ img{
 
 img:hover {
   transform: scale(1.1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+}
+
+.questions{
+  margin-top: 17.5%;
+  margin-left: 1.5%;
+  border: 0.15vw solid black;
+  border-radius: 0.75vw;
+  background: white;
+  width: 10.15%;
+  height: 18.45%;
+  float: left;
+  box-shadow: 0.4vw 0.2vw 0.2vw gray;
+}
+
+.start_sec_round{
+  font-size: 1.5vw;
+  text-align: center;
+  vertical-align: center;
+  line-height: 7.5vw;
 }
 </style>

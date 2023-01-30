@@ -1,7 +1,7 @@
 <template>
      <div id="menu" class="menu">
-        <div id="avatar" class="avatar" :style="selected_product[1]">
-            {{selected_product[0]}}
+        <div id="avatar" class="avatar" :style="selected_product.colour">
+            {{selected_product.name}}
         </div>
 
         <div @click="edit" id="edit">
@@ -24,14 +24,14 @@ import { SERVER_PATH } from '../common_const.js'
 
 export default {
   name: 'ProductMenu',
-  props:['selected_product', 'current_view'],
+  props:['selected_product', 'current_view', 'round'],
   data(){
     return {
     }
   },
   methods: {
         back: function () {
-            if( this.current_view == 'fields_1' )
+            if( this.round == 1 )
                 this.$emit('fields-1');
             else
                 this.$emit('fields-2');
@@ -51,7 +51,7 @@ export default {
             }
         },
         save_product: function () {
-            if(this.selected_product[2])
+            if(this.selected_product.productId)
             {
                 fetch(SERVER_PATH + "/product/update", {
                 method: "POST",

@@ -1,6 +1,6 @@
 <template>
-    <MasterList ref="masters" @master-chosen="chose_master" :masters="masters" :master_chosen="master_chosen" />
-    <MasterRequests @go-back="go_back" @add-master="add_master" @remove-master="remove_master" @save-edit="save_edit" :master_chosen="master_chosen" :selected="selected" :fio="fio" :login="login" />
+    <MasterList ref="masters" @master-chosen="chose_master" :masters="masters" />
+    <MasterRequests @go-back="go_back" @add-master="add_master" @remove-master="remove_master" @save-edit="save_edit" :master_chosen="master_chosen" :selected="selected" />
 </template>
 
 <script>
@@ -15,22 +15,7 @@ export default {
       current_text: 'Игровые поля',
       master_chosen: false,
       selected: null,
-      fio: null,
-      login: null,
-      masters:[
-        { text: 'Ведущий 1', value: '1' },
-        { text: 'Ведущий 2', value: '2' },
-        { text: 'Ведущий 3', value: '3' },
-        { text: 'Ведущий 4', value: '4' },
-        { text: 'Ведущий 5', value: '5' },
-        { text: 'Ведущий 6', value: '6' },
-        { text: 'Ведущий 7', value: '7' },
-        { text: 'Ведущий 8', value: '8' },
-        { text: 'Ведущий 9', value: '9' },
-        { text: 'Ведущий 10', value: '10' },
-        { text: 'Ведущий 11', value: '11' },
-        { text: 'Ведущий 12', value: '12' },
-        ],
+      masters:[ ],
 
     }
   },
@@ -48,21 +33,22 @@ export default {
     chose_master: function (master_chosen, selected) {
         this.master_chosen = master_chosen;
         this.selected = selected;
-        this.fio = selected.getAttribute("name");
-        this.login = selected.getAttribute("name");
-        
     },
     go_back: function () {
         this.master_chosen = false;
         this.$refs.masters.unselect();
     },
-    add_master: function(name, val){
-      this.masters.push({text: name, value:val});
+    add_master: function(user){
+      this.masters.push(user);
     },
-    remove_master: function(value){
-      this.masters = this.masters.filter(option => option.value != value);
+    remove_master: function(){
+      this.masters = this.masters.filter(option => option.userId != this.selected.userId);
       this.master_chosen = false;
       this.$refs.masters.unselect();
+      fetch(SERVER_PATH + "/user/delete/" + String(this.selected.userId), {
+                method: "DELETE",
+                headers: {'Content-Type': 'application/json'}
+                });
     },
     set_draw: function(draw){
       this.draw = draw;
@@ -70,27 +56,29 @@ export default {
     log_out: function(){
         this.$emit('logout');
     },
-    save_edit: function(fio){
-      var name = this.selected.getAttribute("name");
-      this.fio = fio;
-      this.login = fio;
-      this.masters.forEach(function(item) {
-          if(name == item.text)
-          {
-              item.text = fio;
-          }
+    save_edit: function(first, middle, last, login){
+      console.log(first, middle, last, login);
+      this.selected.firstName = first;
+      this.selected.patronymic = middle;
+      this.selected.lastName = last;
+      this.selected.login = login;
+      fetch(SERVER_PATH + "/user/update/info", {
+          method: "POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(this.selected)
       });
     },
   },
-  mounted: function () {
+  beforeMount: function () {
       let masters_ref = this.masters;
       masters_ref.length = 0;
     this.$nextTick(function () {
-    fetch(SERVER_PATH + "/admin/leaders", {
+
+    fetch(SERVER_PATH + "/user/get/activeMasters", {
             method: "GET",
             headers: {'Content-Type': 'application/json'}
             }).then( res => res.json() ).then( data => data.forEach(function(item) {
-                masters_ref.push(item)}) );
+                   masters_ref.push(item)}) );
     });
   }
 }

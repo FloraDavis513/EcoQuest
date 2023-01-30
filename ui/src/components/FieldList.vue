@@ -1,7 +1,9 @@
 <template>
     <div class="scroll">
      <div class="grid" id="grid">
-        <div class="grid_element" v-for="(option, index) in products" @click="select_product" :key="index" v-bind:style="get_color(option)" :data-db_id="option.id">{{ option.text }}</div>
+        <div class="grid_element" v-for="(option, index) in products" @click="select_product(index)" :key="index" v-bind:style="option.colour">
+            {{ option.name }}
+        </div>
         <div class="grid_element plus" @click="add_product">+</div>
      </div>
     </div>
@@ -16,31 +18,12 @@ export default {
     }
   },
   methods: {
-        go_to_fields: function () {
-            this.$emit('go-to-fields');
-        },
         add_product: function () {
             this.$emit('add-field');
         },
-        get_color: function (product) {
-            if(product.text == "Финал" || product.text == "Полуфинал")
-                return 'color:black;background-color:white;'
-            else
-                return product.color;
+        select_product: function (index) {
+            this.$emit('select-product', this.products[index]);
         },
-        select_product: function (event) {
-            var q = null;
-            this.products.forEach(function(item) {
-                    if(item.id == event.target.dataset.db_id)
-                    {
-                        q = item.questions;
-                    }
-                });
-            this.$emit('select-product', event.target.innerHTML, 'background:' + event.target.style.backgroundColor, event.target.dataset.db_id, q);
-        },
-        save_template_product: function (data) {
-            this.db_products = data;
-    },
   }
 }
 </script>
