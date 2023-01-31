@@ -1,4 +1,6 @@
-﻿namespace EcoQuest
+﻿using System.Globalization;
+
+namespace EcoQuest
 {
     public static class RequestValidator
     {
@@ -11,13 +13,9 @@
             if (request.Date == null || request.Date == String.Empty)
                 return (false, Results.BadRequest("Дата проведения игры не может иметь значение null"));
 
-            DateTime date;
-
-            if (!DateTime.TryParse(request.Date, out date))
+            if (!DateTime.TryParse(request.Date, new CultureInfo("en-US"), DateTimeStyles.None, out _))
                 return (false, Results.BadRequest("Дата проведения игры имеет невалидный формат"));
-            if (date < DateTime.Now)
-                return (false, Results.BadRequest("Дата проведения игры не может иметь значение меньшее текущей даты"));
-
+            
             User? targetUser = (from u in db.Users
                                 where u.UserId == request.UserId
                                 select u).FirstOrDefault();
@@ -85,9 +83,9 @@
                 return (false, Results.BadRequest("Продолжительность игры не может иметь значение null"));
             if (request.Results == null || request.Results == String.Empty)
                 return (false, Results.BadRequest("Результаты игры не могут иметь значение null"));
-            if (!DateTime.TryParse(request.Date, out _))
+            if (!DateTime.TryParse(request.Date, new CultureInfo("en-US"), DateTimeStyles.None, out _))
                 return (false, Results.BadRequest("Дата проведения игры имеет невалидный формат"));
-            if (!TimeSpan.TryParse(request.Duration, out _))
+            if (!TimeSpan.TryParse(request.Duration, new CultureInfo("en-US"), out _))
                 return (false, Results.BadRequest("Продолжительность игры имеет невалидный формат"));
 
             User? targetUser = (from u in db.Users

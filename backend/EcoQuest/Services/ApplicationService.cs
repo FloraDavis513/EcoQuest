@@ -1,6 +1,7 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -147,7 +148,7 @@ namespace EcoQuest
             db.Games.Add(newGame);
 
             db.SaveChanges();
-
+            
             return Results.Ok();
         }
         public IResult GameDeleteId(eco_questContext db, long id)
@@ -749,7 +750,7 @@ namespace EcoQuest
 
                 if (newQuestion.Type != "MEDIA")
                     newQuestion.Media = null;
-                newQuestion.LastEditDate = DateTime.Now.ToString();
+                newQuestion.LastEditDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US"));
 
                 newProduct.Questions.Add(newQuestion);
             }
@@ -757,7 +758,7 @@ namespace EcoQuest
             db.Products.Add(newProduct);
 
             db.SaveChanges();
-
+            
             return Results.Ok();
         }
         public IResult ProductExport(eco_questContext db, ProductExportDTO request)
@@ -1223,10 +1224,10 @@ namespace EcoQuest
                         ShortText = question.ShortText,
                         Text = question.Text,
                         Media = question.Media,
-                        LastEditDate = question.LastEditDate,
+                        LastEditDate = question.LastEditDate
                     };
 
-                    newQuestion.LastEditDate = DateTime.Now.ToString();
+                    newQuestion.LastEditDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US"));
                     if (newQuestion.Type != "MEDIA") newQuestion.Media = null;
 
                     targetProduct.Questions.Add(newQuestion);
@@ -1237,7 +1238,7 @@ namespace EcoQuest
                     targetQuestion.Type = question.Type;
                     targetQuestion.ShortText = question.ShortText;
                     targetQuestion.Text = question.Text;
-                    targetQuestion.LastEditDate = DateTime.Now.ToString();
+                    targetQuestion.LastEditDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US"));
 
                     if (targetQuestion.Type != "MEDIA") targetQuestion.Media = null;
                     else targetQuestion.Media = question.Media;
@@ -1364,17 +1365,17 @@ namespace EcoQuest
             List<(Statistic, DateTime, TimeSpan)> allRecordsDatesDurations = new List<(Statistic, DateTime, TimeSpan)>();
 
             foreach (var record in allRecords)
-                allRecordsDatesDurations.Add((record, DateTime.Parse(record.Date), TimeSpan.Parse(record.Duration)));
+                allRecordsDatesDurations.Add((record, DateTime.Parse(record.Date, new CultureInfo("en-US"), DateTimeStyles.None), TimeSpan.Parse(record.Duration, new CultureInfo("en-US"))));
 
             DateTime startDate;
             DateTime endDate;
             TimeSpan startDuration;
             TimeSpan endDuration;
 
-            bool startDateParsingResult = DateTime.TryParse(request.StartDate, out startDate);
-            bool endDateParsingResult = DateTime.TryParse(request.EndDate, out endDate);
-            bool startDurationParsingResult = TimeSpan.TryParse(request.StartDuration, out startDuration);
-            bool endDurationParsingResult = TimeSpan.TryParse(request.EndDuration, out endDuration);
+            bool startDateParsingResult = DateTime.TryParse(request.StartDate, new CultureInfo("en-US"), DateTimeStyles.None, out startDate);
+            bool endDateParsingResult = DateTime.TryParse(request.EndDate, new CultureInfo("en-US"), DateTimeStyles.None, out endDate);
+            bool startDurationParsingResult = TimeSpan.TryParse(request.StartDuration, new CultureInfo("en-US"), out startDuration);
+            bool endDurationParsingResult = TimeSpan.TryParse(request.EndDuration, new CultureInfo("en-US"), out endDuration);
 
             if (!startDateParsingResult)
                 startDate = allRecordsDatesDurations.Min(x => x.Item2);
@@ -1653,10 +1654,10 @@ namespace EcoQuest
             List<(Game, DateTime)> allGamesDates = new List<(Game, DateTime)>();
 
             foreach (var game in allGames)
-                allGamesDates.Add((game, DateTime.Parse(game.Date)));
+                allGamesDates.Add((game, DateTime.Parse(game.Date, new CultureInfo("en-US"), DateTimeStyles.None)));
 
             List<Game> targetGames = (from g in allGamesDates
-                                      where DateTime.Now >= g.Item2.Add(TimeSpan.FromDays(7))
+                                      where DateTime.UtcNow >= g.Item2.Add(TimeSpan.FromDays(7))
                                       select g.Item1).ToList();
 
             db.Games.RemoveRange(targetGames);
