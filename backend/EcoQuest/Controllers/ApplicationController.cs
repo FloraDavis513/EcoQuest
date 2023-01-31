@@ -105,6 +105,7 @@ namespace EcoQuest
             _app.MapPost("/user/toInactiveMaster/{id:long}", _service.UserToInactiveMasterId);
             _app.MapPost("/user/update/info", _service.UserUpdateInfo);
             _app.MapPost("/user/update/password", _service.UserUpdatePassword);
+            _app.MapPost("/user/update/password/reset", _service.UserUpdatePasswordReset);
         }
     }
 }

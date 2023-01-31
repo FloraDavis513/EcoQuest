@@ -953,14 +953,6 @@ namespace EcoQuest
             }
 
             return Results.Ok();
-
-            /*
-            using (MemoryStream stream = new MemoryStream())
-            {
-                workbook.SaveAs(stream);
-                return Results.File(stream.ToArray(), "Products.xlsx");
-            }
-            */
         }
         public IResult ProductDeleteId(eco_questContext db, long id)
         {
@@ -1458,23 +1450,15 @@ namespace EcoQuest
 
             worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-
+            
             string filePath = $"{_app.Configuration["SourcePath"]}statistics.xlsx";
 
             using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
             {
                 workbook.SaveAs(fileStream);
             }
-
+            
             return Results.Ok();
-
-            /*
-            using (MemoryStream stream = new MemoryStream())
-            {
-                workbook.SaveAs(stream);
-                return Results.File(stream.ToArray(), "Statistics.xlsx");
-            }
-            */
         }
 
         public IResult UserCreate(eco_questContext db, User request)
@@ -1640,6 +1624,28 @@ namespace EcoQuest
                 return Results.NotFound("Запрашиваемый пользователь не найден");
             if (targetUser.Password != PasswordHasher.Encrypt(request.OldPassword))
                 return Results.BadRequest("Запрашиваемый пароль пользователя не совпадает с фактическим");
+
+            targetUser.Password = PasswordHasher.Encrypt(request.NewPassword);
+
+            db.SaveChanges();
+
+            return Results.Ok();
+        }
+        public IResult UserUpdatePasswordReset(eco_questContext db, UpdatePasswordDTO request)
+        {
+            Console.WriteLine("==========/user/update/password/reset==========");
+
+            if (request.Login == null || request.Login == String.Empty)
+                return Results.BadRequest("Логин пользователя не может иметь значение null");
+            if (request.NewPassword == null || request.NewPassword == String.Empty)
+                return Results.BadRequest("Новый пароль пользователя не может иметь значение null");
+
+            User? targetUser = (from u in db.Users
+                                where u.Login == request.Login
+                                select u).FirstOrDefault();
+
+            if (targetUser == null)
+                return Results.NotFound("Запрашиваемый пользователь не найден");
 
             targetUser.Password = PasswordHasher.Encrypt(request.NewPassword);
 
