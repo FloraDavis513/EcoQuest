@@ -19,7 +19,7 @@
         <div class="master_menu_button" id="delete" @click="check_delete">
             Удалить
         </div>
-        <div class="master_menu_button" >
+        <div class="master_menu_button" @click="share_template" >
             Поделиться
         </div>
         <!-- <div class="master_menu_button" id="start" @click="create_game">
@@ -40,6 +40,9 @@ export default {
     }
   },
   methods: {
+    share_template: function () {
+      this.$emit('share-template')
+    },
     select_question: function () {
       var question = document.getElementById('select_question')
       // eslint-disable-next-line camelcase

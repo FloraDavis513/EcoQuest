@@ -138,11 +138,10 @@ export default {
         if(this.current_question.question.answers == null)
           return full_text;
         answers = JSON.parse(this.current_question.question.answers);
-        if(answers.AllAnswers.length == 0)
-        return full_text;
+        if(answers.AllAnswers.length == answers.CorrectAnswers)
+          return full_text;
         let all_answers = [];
         answers.AllAnswers.forEach(item => all_answers.push(item));
-        answers.CorrectAnswers.forEach(item => all_answers.push(item));
         this.custom_shuffle(all_answers);
         all_answers.forEach(item => full_text += ('\n* ' + item) )
         return full_text;

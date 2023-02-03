@@ -7,34 +7,26 @@
             <div v-if="state == 'edit'">
                 <div class="group_inputs">
                     <div class="form-group">
-                        <label class="form-label" for="name">Фамилия</label>
-                        <input type="text" class="form-control" id="lastname" placeholder="Введите фамилию" :value="selected.lastName" >
+                        <label class="form-label" for="name">{{'Фамилия: ' + selected.lastName}}</label>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="name">Имя</label>
-                        <input type="text" class="form-control" id="firstname" placeholder="Введите имя" :value="selected.firstName">
+                        <label class="form-label" for="name">{{'Имя: ' + selected.firstName}}</label>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="name">Отчество</label>
-                        <input type="text" class="form-control" id="middlename" placeholder="Введите отчество" :value="selected.patronymic">
+                        <label class="form-label" for="name">{{'Отчество: ' + selected.patronymic}}</label>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="login">Логин</label>
-                        <input type="text" class="form-control" id="login" placeholder="Введите логин" :value="selected.login">
+                        <label id="login" class="form-label" for="login">{{'Логин: ' + selected.login}}</label>
                     </div>
 
-                    <!-- <div class="form-group">
-                        <label class="form-label" for="password">Пароль</label>
-                        <input type="password" class="form-control" id="password" placeholder="Введите пароль" @change="change_pass">
-                    </div> -->
+                    <div v-show="is_reset" class="form-group">
+                        <label id="password" class="form-label" for="password"></label>
+                    </div>
                 </div>
                 <div class="group_button">
-                    <div v-if="draw == 'edit'" @click="edit" class="button">
-                        Редактировать
-                    </div>
-                    <div v-if="draw == 'save_edit'" @click="save_edit" class="button">
-                        Сохранить
+                    <div v-if="draw == 'edit'" @click="reset_password" class="button">
+                        Сбросить пароль
                     </div>
                     <div @click="check_remove_old_master" class="button">
                         Удалить
@@ -78,10 +70,30 @@ export default {
         options: [ ],
         counter: 0,
         draw: 'edit',
-        state: 'edit'
+        state: 'edit',
+        is_reset: false
     }
   },
   methods: {
+        generatePassword: function () {
+            var length = 8,
+                charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                retVal = "";
+            for (var i = 0, n = charset.length; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * n));
+            }
+            return retVal;
+        },
+        reset_password: async function () {
+            let new_pass = this.generatePassword();
+            await fetch(SERVER_PATH + "/user/update/password/reset", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({Login: this.selected.login, NewPassword: new_pass})
+                });
+            document.getElementById("password").innerText = "Новый пароль: " + new_pass;
+            this.is_reset = true;
+        },
         add: function (add_index) {
             console.log(add_index);
             var change_user = this.options[add_index];
@@ -110,28 +122,9 @@ export default {
         cancel_delete: function () {
             this.state = 'edit'
         },
-        edit: function () {
-            this.draw = 'save_edit';
-            var list = document.getElementsByClassName("form-control");
-            for (let item of list) {
-                item.style.pointerEvents = 'auto';
-            }
-        },
         go_back: function () {
             this.$emit('go-back');
             this.state = 'edit'
-        },
-        save_edit: function () {
-            this.draw = 'edit';
-            var firstname = document.getElementById("firstname").value;
-            var middlename = document.getElementById("middlename").value;
-            var lastname = document.getElementById("lastname").value;
-            var login = document.getElementById("login").value;
-            var list = document.getElementsByClassName("form-control");
-            for (let item of list) {
-                item.style.pointerEvents = 'none';
-            }
-            this.$emit('save-edit', firstname, middlename, lastname, login);
         },
     },
     created: function () {

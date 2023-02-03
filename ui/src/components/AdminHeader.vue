@@ -4,19 +4,19 @@
             <div class="green_part">Э</div><div class="black_part">ко</div><div class="green_part">К</div><div class="black_part">вест</div>
         </div>
         <div class="role">Администратор</div>
-        <div class="profile"><img src="@/assets/profile.png" @mouseenter="vis = true"></div>
-        <div v-if="vis" id="profile_menu" @mouseleave="vis = false">
+        <div class="profile"><img src="@/assets/profile.png" @click="vis = !vis"></div>
+        <div v-if="vis" id="profile_menu">
             <div id="gen_stat" @click="download_products" style="position:relative;float:left;margin-left: 8%;">
                 Выгрузить продукты
             </div>
-            <div id="gen_stat" @click="upload_products" style="position:relative;float:left;height:24%;margin-left: 8%;">
+            <div id="gen_stat" style="position:relative;float:left;height:24%;margin-left: 8%;">
                 <div id="gen_prod" style="position:absolute;margin-left:0;">Загрузить продукты</div>
-                <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;opacity: 0;" @change="upload_logo" @mouseenter="underline_up" @mouseleave="underline_down">
+                <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;opacity: 0;" @change="upload_products" @mouseenter="underline_up" @mouseleave="underline_down">
             </div>
             <div id="gen_stat" @click="download_stat" style="position:relative;float:left;">
                 Выгрузить статистику
             </div>
-            <div id="change_pass" style="position:relative;float:left;">
+            <div id="change_pass" style="position:relative;float:left;" @click="change_pass">
                 Сменить пароль
             </div>
             <div @click="logout" id="logout" style="position:relative;float:left;">
@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { SERVER_PATH } from '../common_const.js'
+import { SERVER_PATH, SRC_PATH } from '../common_const.js'
 
 export default {
   name: 'AdminHeader',
@@ -38,6 +38,21 @@ export default {
     }
   },
   methods: {
+      upload_products: async function () {
+        this.vis = true;
+        const uploadFileEle = document.getElementById("selected_logo");
+        let file = uploadFileEle.files[0];
+        let formData = new FormData();
+        formData.set('uploads', file);
+        await fetch(SERVER_PATH + "/product/import", {
+            method: "POST",
+            body: formData
+        });
+        this.$emit('reload-question');
+      },
+      change_pass: function () {
+          this.$emit('change-pass');
+      },
       logout: function () {
           this.$emit('logout');
       },
@@ -51,26 +66,29 @@ export default {
       underline_down: function () {
             document.getElementById('gen_prod').style.textDecoration = 'none';
       },
+      download_products: async function () {
+        await fetch(SERVER_PATH + "/product/export", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({})
+        });
+        this.openInNewTab(SRC_PATH + 'product.xlsx');
+    },
       download_stat: async function () {
         await fetch(SERVER_PATH + "/statistic/export", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({})
-    //         }).then(res => res.blob()).then(file => {
-    //     console.log(file);
-    //     const newBlob = new Blob([file], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    //     let tempUrl = URL.createObjectURL(newBlob);
-    //     const aTag = document.createElement("a");
-    //     aTag.href = tempUrl;
-    //     aTag.download = 'stat.xlsx';
-    //     document.body.appendChild(aTag);
-    //     aTag.click();
-    //     URL.revokeObjectURL(tempUrl);
-    //     aTag.remove();
-    // }).catch(() => {
-    //     alert("Failed to download file!");
     });
-    }
+    this.openInNewTab(SRC_PATH + 'statistics.xlsx');
+    },
+    openInNewTab: function (href) {
+        Object.assign(document.createElement('a'), {
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            href: href,
+        }).click();
+        }
   }
 }
 </script>

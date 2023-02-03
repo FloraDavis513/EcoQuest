@@ -1,5 +1,5 @@
 <template>
-    <AdminHeader @logout="log_out"/>
+    <AdminHeader @logout="log_out" @change-pass="change_pass = true" @reload-question="read_product_list()"/>
     <NavigationButton @fields-1="to_fields_1" @fields-2="to_fields_2" @masters="to_masters" />
 
     <ManageMasters v-if="current_view == 'masters'"/>
@@ -9,6 +9,15 @@
 
     <ProductMenu v-if="current_view == 'questions'" :current_view="current_view" :round="current_round" :selected_product="selected_product" @fields-1="to_fields_1" @fields-2="to_fields_2" @delete-product="delete_product" @edit-product="edit_product" />
     <QuestionsList v-if="current_view == 'questions'" @to-masters="to_masters" @add-question="add_question" @edit-question="edit_question" @delete-question="delete_question" @final-delete-product="final_delete_product" @final-edit-product="final_edit_product" @reset-edit="reset_edit" :selected_product="selected_product" :draw="draw" :products="products" :cache_product="cache_product" ref="q_list" @reload-question="read_product_list()" />
+
+    <div id="question_preview" v-show="change_pass">
+        <div style="float:right;font-size:1.75vw;margin-top:0.25%;margin-right:2.5%;width:10%;text-align:right;" @click="close_changes_pass">x</div>
+        <div style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:2.5%;">Введите новый пароль:</div>
+        <input type="password" id="new_pass" style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:1%;border-bottom:0.1vw solid silver;border-top:none;border-left:none;border-right:none;outline:none;" placeholder="Новый пароль">
+        <div style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:2.5%;">Для подтверждения действия введите старый пароль:</div>
+        <input type="password" id="old_pass" style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:1%;border-bottom:0.1vw solid silver;border-top:none;border-left:none;border-right:none;outline:none;" placeholder="Старый пароль">
+        <div class="button" style="float:right;" @click="update_pass">Сохранить</div>
+    </div>
 </template>
 
 <script>
@@ -41,10 +50,23 @@ export default {
         selected_product: null,
         draw: 'questions',
         products: [],
-        cache_product: ['name', 'colour']
+        cache_product: ['name', 'colour'],
+        change_pass: false,
     }
   },
   methods: {
+        update_pass: function () {
+            fetch(SERVER_PATH + "/user/update/password", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({Login: JSON.parse(localStorage.getItem('user')).login, NewPassword: document.getElementById('new_pass').value, OldPassword: document.getElementById('old_pass').value})
+                });
+        },
+        close_changes_pass: function () {
+            this.change_pass = false;
+            document.getElementById('new_pass').value = '';
+            document.getElementById('old_pass').value = '';
+        },
         to_masters: function () {
             this.current_view = 'masters';
         },
@@ -190,4 +212,46 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+#question_preview{
+  position: absolute;
+  background-color: white;
+  border: 0.2vw solid black;
+  left: 27.5%;
+  width: 45%;
+  top: 30%;
+  height: 40%;
+  border-radius: 1vw;
+}
+
+.button{
+    width: 35%;
+    float: left;
+    margin-top: 2%;
+    margin-right: 4%;
+    margin-left: 4%;
+    background-color: green;
+    color: #ffffff;
+    font-size: 1.2vw;
+    font-weight: bold;
+    border-radius: 35px;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    text-align: center;
+}
+
+.button:hover {
+    box-shadow: 0 0 10px 100px orange inset;
+}
+
+/* .scroll{
+    height: 100%;
+    overflow: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+} */
 </style>

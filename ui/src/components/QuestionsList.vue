@@ -291,7 +291,7 @@ export default {
             this.selected_question.index = index;
             this.is_media = this.selected_question.type === "MEDIA";
             this.corr_ans = JSON.parse(this.selected_question.answers).CorrectAnswers;
-            this.ans = JSON.parse(this.selected_question.answers).AllAnswers;
+            this.ans = JSON.parse(this.selected_question.answers).AllAnswers.filter(item => !this.corr_ans.includes(item));
         },
         del_question: function () {
             this.draw = 'delete_question';
@@ -304,8 +304,7 @@ export default {
             this.draw = 'edit_question';
         },
         save_question: function () {
-            this.selected_question.answers = JSON.stringify({AllAnswers:this.ans, CorrectAnswers:this.corr_ans});
-            console.log(this.selected_question);
+            this.selected_question.answers = JSON.stringify({AllAnswers:this.ans.concat(this.corr_ans), CorrectAnswers:this.corr_ans});
             this.$emit('edit-question', this.selected_question);
             this.draw = 'questions';
         },

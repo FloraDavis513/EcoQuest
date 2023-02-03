@@ -4,9 +4,9 @@
             <div class="green_part">Э</div><div class="black_part">ко</div><div class="green_part">К</div><div class="black_part">вест</div>
         </div>
         <div class="role">Ведущий</div>
-        <div class="profile" @click="pop_up_profile_menu"><img src="@/assets/profile.png" alt=""></div>
+        <div class="profile" @click="vis = !vis"><img src="@/assets/profile.png" alt=""></div>
         <div v-if="vis" id="profile_menu">
-            <div id="change_pass">
+            <div id="change_pass" @click="change_pass">
                 Сменить пароль
             </div>
             <div @click="logout" id="logout">
@@ -26,6 +26,9 @@ export default {
     }
   },
   methods: {
+      change_pass: function () {
+          this.$emit('change-pass');
+      },
       logout: function () {
           this.$emit('logout');
       },
