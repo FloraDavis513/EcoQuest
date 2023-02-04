@@ -1021,12 +1021,15 @@ namespace EcoQuest
 
                     string? name = worksheet.Cell("B3").Value.ToString();
                     string? colour = worksheet.Cell("C3").Value.ToString();
-                    string? logo = worksheet.Cell("D3").Value.ToString();
 
                     int round;
                     bool roundParsingResult = int.TryParse(worksheet.Cell("E3").Value.ToString(), out round);
                     if (!roundParsingResult)
                         round = 0;
+
+                    string? logo = worksheet.Cell("D3").Value.ToString();
+                    if (!(Path.GetFileNameWithoutExtension(logo) == $"logo{productId1}" && File.Exists(_app.Configuration["SourcePath"] + logo)))
+                        logo = null;
 
                     Product newProduct = new Product()
                     {
@@ -1034,7 +1037,7 @@ namespace EcoQuest
                         Colour = colour,
                         Name = name,
                         Round = round,
-                        Logo = null
+                        Logo = logo
                     };
 
                     int row = 7;
@@ -1073,8 +1076,11 @@ namespace EcoQuest
                         string? shortText = worksheet.Cell("D" + row).Value.ToString();
                         string? text = worksheet.Cell("E" + row).Value.ToString();
                         string? answers = worksheet.Cell("F" + row).Value.ToString();
-                        string? media = worksheet.Cell("G" + row).Value.ToString();
                         string? lastEditDate = worksheet.Cell("H" + row).Value.ToString();
+
+                        string? media = worksheet.Cell("G" + row).Value.ToString();
+                        if (!(Path.GetFileNameWithoutExtension(media) == $"media{questionId}" && File.Exists(_app.Configuration["SourcePath"] + media)))
+                            media = null;
 
                         if (answers != null)
                         {
@@ -1100,7 +1106,7 @@ namespace EcoQuest
                             ShortText = shortText,
                             Text = text,
                             ProductId = productId2,
-                            Media = null,
+                            Media = media,
                             LastEditDate = lastEditDate
                         };
 
@@ -1109,7 +1115,48 @@ namespace EcoQuest
                         row++;
                     }
 
-                    ProductUpdate(db, newProduct);
+                    (bool, IResult) validResult = RequestValidator.ValidateProductModel(db, newProduct);
+
+                    if (!validResult.Item1)
+                        continue;
+
+                    Product? targetProduct = (from p in db.Products.Include(x => x.Questions)
+                                              where p.ProductId == newProduct.ProductId
+                                              select p).FirstOrDefault();
+
+                    if (targetProduct == null)
+                    {
+                        ProductDeleteId(db, newProduct.ProductId);
+                        ProductCreate(db, newProduct);
+                        continue;
+                    }
+
+                    targetProduct.Colour = newProduct.Colour;
+                    targetProduct.Name = newProduct.Name;
+                    targetProduct.Round = newProduct.Round;
+                    targetProduct.Logo = newProduct.Logo;
+
+                    targetProduct.Questions.Clear();
+
+                    foreach (var question in newProduct.Questions)
+                    {
+                        Question newQuestion = new Question()
+                        {
+                            Answers = question.Answers,
+                            Type = question.Type,
+                            ShortText = question.ShortText,
+                            Text = question.Text,
+                            Media = question.Media,
+                            LastEditDate = question.LastEditDate
+                        };
+
+                        newQuestion.LastEditDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US"));
+                        if (newQuestion.Type != "MEDIA") newQuestion.Media = null;
+
+                        targetProduct.Questions.Add(newQuestion);
+                    }
+
+                    db.SaveChanges();
                 }
             }
 
@@ -1140,7 +1187,7 @@ namespace EcoQuest
                 file.CopyTo(fileStream);
             }
 
-            targetProduct.Logo = $"{new DirectoryInfo(Path.GetDirectoryName(filePath)).Name}/{Path.GetFileName(filePath)}";
+            targetProduct.Logo = Path.GetFileName(filePath);
 
             db.SaveChanges();
             
@@ -1284,7 +1331,7 @@ namespace EcoQuest
                 file.CopyTo(fileStream);
             }
 
-            targetQuestion.Media = $"{new DirectoryInfo(Path.GetDirectoryName(filePath)).Name}/{Path.GetFileName(filePath)}";
+            targetQuestion.Media = Path.GetFileName(filePath);
 
             db.SaveChanges();
 
