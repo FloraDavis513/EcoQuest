@@ -945,7 +945,7 @@ namespace EcoQuest
                 worksheet.Columns().AdjustToContents();
             }
 
-            string filePath = $"{_app.Configuration["SourcePath"]}product.xlsx";
+            string filePath = $"{_app.Configuration["SourcePath"]}product_{DateTime.Now.ToString("ddMMyy")}.xlsx";
 
             using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
             {
