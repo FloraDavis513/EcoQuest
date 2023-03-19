@@ -17,6 +17,7 @@
         <input type="password" id="new_pass" style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:1%;border-bottom:0.1vw solid silver;border-top:none;border-left:none;border-right:none;outline:none;" placeholder="Новый пароль">
         <div style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:2.5%;">Для подтверждения действия введите старый пароль:</div>
         <input type="password" id="old_pass" style="width:90%;margin-left:5%;font-size:1.5vw;margin-top:1%;border-bottom:0.1vw solid silver;border-top:none;border-left:none;border-right:none;outline:none;" placeholder="Старый пароль">
+        <div v-show="error_change" id="change_status" style="float:left;color:red;margin-top: 2%;margin-left: 5%;font-size:1.1vw;"></div>
         <div class="button" style="float:right;" @click="update_pass">Сохранить</div>
     </div>
 </template>
@@ -52,6 +53,7 @@ export default {
       masters: [],
       success_share: false,
       change_pass: false,
+      error_change: false
     }
   },
   methods:{
@@ -60,7 +62,21 @@ export default {
             method: "POST",
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({Login: JSON.parse(localStorage.getItem('user')).login, NewPassword: document.getElementById('new_pass').value, OldPassword: document.getElementById('old_pass').value})
-            });
+            }).then(res => {
+              if(res.status !== 200)
+              {
+                  this.error_change = true;
+                  res.text().then(text => this.set_error_message(text));
+              }
+              else
+              {
+                  this.error_change = true;
+                  res.text().then(this.set_error_message("Пароль успешно обновлён"));
+              }
+          });
+    },
+    set_error_message: function (message) {
+        document.getElementById("change_status").innerHTML = message;
     },
     close_changes_pass: function () {
         this.change_pass = false;

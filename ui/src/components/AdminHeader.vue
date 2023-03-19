@@ -4,6 +4,7 @@
             <div class="green_part">Э</div><div class="black_part">ко</div><div class="green_part">К</div><div class="black_part">вест</div>
         </div>
         <div class="role">Администратор</div>
+        <div id="updated_message" style="width:23.33%;float:left;text-align:right;font-size:1.5vw;margin-top:0.5%;color:white;">Продукты обновлены</div>
         <div class="profile"><img src="@/assets/profile.png" @click="vis = !vis"></div>
         <div v-if="vis" id="profile_menu">
             <div id="gen_stat" @click="download_products" style="position:relative;float:left;margin-left: 8%;">
@@ -47,6 +48,21 @@ export default {
         await fetch(SERVER_PATH + "/product/import", {
             method: "POST",
             body: formData
+        }).then(res => {
+            let secs = 5;
+            function tick(){
+                (--secs);
+                if(secs == 0)
+                {
+                    clearInterval(timer);
+                    document.getElementById('updated_message').style.color = 'white';
+                }
+            }
+            if(res)
+            {
+                var timer = setInterval(tick, 1000)
+                document.getElementById('updated_message').style.color = 'red';
+            }
         });
         this.$emit('reload-question');
       },
@@ -128,13 +144,13 @@ export default {
 .profile {
     float: left;
     text-align: right;
-    width: 33.33%;
+    width: 10%;
 }
 
 .profile img {
     float: right;
-    width: 9%;
-    height: 9%;
+    width: 30%;
+    height: 30%;
     margin-right: 5%;
 }
 

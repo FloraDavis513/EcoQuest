@@ -37,7 +37,7 @@
         <div v-if="draw === 'edit_question'" id="edit_question" style="height:95%">
             <div id="first_line" style="width:100%;height:7.5%;">
                 <img style="height:75%;width:7.5%;float:left;margin-right:5%" @click="to_questions" src="@/assets/go_back.png" alt="">
-                <div style="width:50%;float:right;font-size:1.25vw;font-style:italic;" id="short_name_header" resize="false">{{'Дата последнего редактирования: ' + selected_question.lastEditDate}}</div>
+                <div style="width:50%;float:right;font-size:1.25vw;font-style:italic;" id="short_name_header" resize="false">{{'Дата последнего редактирования: ' + beautify_date(selected_question.lastEditDate)}}</div>
                 <!-- <img style="height:75%;width:7.5%;float:left;margin-right:5%" @click="to_questions" src="@/assets/go_back.png" alt="">
                 <div style="width:50%;float:left;" id="short_name_header" resize="false">Краткое обозначение вопроса</div>
                 <input style="float:left;width:30%;" type="text" maxlength="16" id="short_name" @blur="save_edit_changes" :value="selected_question.shortText" > -->
@@ -64,7 +64,7 @@
                 <div style="width:30%;height:50%;float:left;margin-left:16%;margin-top:3%;border:2px solid silver;border-radius:0.75vw;">
                     <div style="text-align:center;font-size: 1.65vw;">Верные ответы</div>
                     <hr>
-                    <div class="scroll" style="height:70%;">
+                    <div class="scroll" style="height:70%;width:100%;">
                         <div class="one_player" v-for="(option, index) in corr_ans" :key="index" :index="index">
                             <input type="text" readonly="readonly" :placeholder="'Верный ответ'" :value="decorate_short_ans(option)" class="wait_users" @click="show_answer(option, corr_ans, index)">
                             <div id="delete_player" @click="corr_ans.pop(index)">x</div>
@@ -75,7 +75,7 @@
                 <div style="width:30%;height:50%;float:left;margin-left:12.5%;margin-top:3%;border:2px solid silver;border-radius:0.75vw;">
                     <div style="text-align:center;font-size: 1.65vw;">Прочие варианты ответов</div>
                     <hr>
-                    <div class="scroll" style="height:70%;">
+                    <div class="scroll" style="height:70%;width:100%;">
                         <div class="one_player" v-for="(option, index) in ans" :key="index" :index="index">
                             <input readonly="readonly" :placeholder="'Вариант ответа'" :value="decorate_short_ans(option)" class="wait_users" @click="show_answer(option, ans, index)">
                             <div id="delete_player" @click="ans.pop(index)">x</div>
@@ -117,6 +117,7 @@
 
 <script>
 import { SRC_PATH, SERVER_PATH } from '../common_const.js'
+import { parse } from 'date-fns';
 
 export default {
   name: 'QuestionsList',
@@ -329,6 +330,10 @@ export default {
             this.selected_question.text = document.getElementById('wording').value;
             // this.selected_question.answers = document.getElementById('answer').value;
         },
+        beautify_date: function (date) {
+            let a = parse(date, 'M/d/yyyy hh:mm:ss aa', new Date());
+            return a.toLocaleString('ru-RU');
+        }
   },
 }
 

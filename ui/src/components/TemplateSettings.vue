@@ -20,7 +20,7 @@
           </div>
       </div>
       <FirstRoundField style="top:12%;left:52.5%;transform: scale(0.85);" @new-message="update_message" :logos="[]" :current_template="template" :game_settings="current_game" />
-      <div class="game_buttons" style="top:64.75%;left:22.5%;" id="save_game_button" @click="reset_game">Сброс</div>
+      <!-- <div class="game_buttons" style="top:64.75%;left:22.5%;" id="save_game_button" @click="reset_game">Сброс</div> -->
       <div class="game_buttons" style="top:84.75%;left:22.5%;" id="save_game_button" @click="save_game">Сохранить</div>
       <div class="game_buttons" style="top:84.75%;left:39%;" id="save_game_button" @click="delete_game">Удалить</div>
       <div class="game_buttons" style="top:92%;left:22.5%;" id="shuffle_button" @click="custom_shuffle(current_game.state.field_config)">Перемешать</div>
