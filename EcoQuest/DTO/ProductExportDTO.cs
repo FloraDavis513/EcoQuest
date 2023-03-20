@@ -8,5 +8,6 @@
         }
 
         public ICollection<long> ProductIds { get; set; }
+        public string? FileName { get; set; }
     }
 }

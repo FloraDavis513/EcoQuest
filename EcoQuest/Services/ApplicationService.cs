@@ -148,7 +148,7 @@ namespace EcoQuest
             db.Games.Add(newGame);
 
             db.SaveChanges();
-            
+
             return Results.Ok();
         }
         public IResult GameDeleteId(eco_questContext db, long id)
@@ -261,8 +261,8 @@ namespace EcoQuest
                     JsonArray allPlayers = playersNode.AsArray();
 
                     List<long> allPlayerIds = (from p in allPlayers
-                                               select (long) p["PlayerId"]!).ToList();
-                    
+                                               select (long)p["PlayerId"]!).ToList();
+
                     long newPlayerId = 1;
 
                     while (allPlayerIds.Contains(newPlayerId))
@@ -327,7 +327,7 @@ namespace EcoQuest
                     JsonArray allPlayers = playersNode.AsArray();
 
                     JsonNode? targetPlayerNode = (from p in allPlayers
-                                                  where (long) p["PlayerId"]! == playerId
+                                                  where (long)p["PlayerId"]! == playerId
                                                   select p).FirstOrDefault();
 
                     if (targetPlayerNode != null)
@@ -385,7 +385,7 @@ namespace EcoQuest
                     JsonArray allPlayers = playersNode.AsArray();
 
                     JsonNode? targetPlayerNode = (from p in allPlayers
-                                                  where (long) p["PlayerId"]! == request.PlayerId
+                                                  where (long)p["PlayerId"]! == request.PlayerId
                                                   select p).FirstOrDefault();
 
                     if (targetPlayerNode == null)
@@ -758,7 +758,7 @@ namespace EcoQuest
             db.Products.Add(newProduct);
 
             db.SaveChanges();
-            
+
             return Results.Ok();
         }
         public IResult ProductExport(eco_questContext db, ProductExportDTO request)
@@ -945,7 +945,16 @@ namespace EcoQuest
                 worksheet.Columns().AdjustToContents();
             }
 
-            string filePath = $"{_app.Configuration["SourcePath"]}product_{DateTime.Now.ToString("ddMMyy")}.xlsx";
+            List<string> oldFiles = (from file in Directory.GetFiles(_app.Configuration["SourcePath"])
+                                     where Regex.IsMatch(Path.GetFileName(file), @"^product.*\.xlsx$")
+                                     select file).ToList();
+
+            foreach (var oldFile in oldFiles)
+            {
+                File.Delete(oldFile);
+            }
+
+            string filePath = $"{_app.Configuration["SourcePath"]}{request.FileName}.xlsx";
 
             using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
             {
@@ -1190,7 +1199,7 @@ namespace EcoQuest
             targetProduct.Logo = Path.GetFileName(filePath);
 
             db.SaveChanges();
-            
+
             return Results.Ok();
         }
         public IResult ProductLogoDeleteId(eco_questContext db, long id)
@@ -1309,8 +1318,8 @@ namespace EcoQuest
             Console.WriteLine("==========/question/media/create/{id:long}==========");
 
             Question? targetQuestion = (from q in db.Questions
-                                      where q.QuestionId == id
-                                      select q).FirstOrDefault();
+                                        where q.QuestionId == id
+                                        select q).FirstOrDefault();
 
             if (targetQuestion == null)
                 return Results.NotFound("Запрашиваемый вопрос не найден");
@@ -1342,8 +1351,8 @@ namespace EcoQuest
             Console.WriteLine("==========/question/media/delete/{id:long}==========");
 
             Question? targetQuestion = (from q in db.Questions
-                                      where q.QuestionId == id
-                                      select q).FirstOrDefault();
+                                        where q.QuestionId == id
+                                        select q).FirstOrDefault();
 
             if (targetQuestion != null && targetQuestion.Media != null)
             {
@@ -1399,6 +1408,9 @@ namespace EcoQuest
         public IResult StatisticExport(eco_questContext db, StatisticExportDTO request)
         {
             Console.WriteLine("==========/statistic/export==========");
+
+            if (request.FileName == null || request.FileName == String.Empty)
+                return Results.BadRequest("Имя файла не может иметь значение null");
 
             List<Statistic> allRecords = db.Statistics.ToList();
             List<(Statistic, DateTime, TimeSpan)> allRecordsDatesDurations = new List<(Statistic, DateTime, TimeSpan)>();
@@ -1497,14 +1509,23 @@ namespace EcoQuest
 
             worksheet.Range($"A1:I{row - 1}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             worksheet.Range($"A1:I{row - 1}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            
-            string filePath = $"{_app.Configuration["SourcePath"]}statistics.xlsx";
+
+            List<string> oldFiles = (from file in Directory.GetFiles(_app.Configuration["SourcePath"])
+                                     where Regex.IsMatch(Path.GetFileName(file), @"^statistics.*\.xlsx$")
+                                     select file).ToList();
+
+            foreach (var oldFile in oldFiles)
+            {
+                File.Delete(oldFile);
+            }
+
+            string filePath = $"{_app.Configuration["SourcePath"]}{request.FileName}.xlsx";
 
             using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
             {
                 workbook.SaveAs(fileStream);
             }
-            
+
             return Results.Ok();
         }
 

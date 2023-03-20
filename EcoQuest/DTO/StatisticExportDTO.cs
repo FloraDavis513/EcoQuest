@@ -6,5 +6,6 @@
         public string? EndDate { get; set; }
         public string? StartDuration { get; set; }
         public string? EndDuration { get; set; }
+        public string? FileName { get; set; }
     }
 }

@@ -153,6 +153,9 @@ namespace EcoQuest
                     return (false, Results.NotFound("Один или несколько продуктов не найдены"));
             }
 
+            if (request.FileName == null || request.FileName == String.Empty)
+                return (false, Results.BadRequest("Имя файла не может иметь значение null"));
+
             return (true, Results.Ok());
         }
         public static (bool, IResult) ValidateUpdatePasswordDTO(eco_questContext db, UpdatePasswordDTO request)
