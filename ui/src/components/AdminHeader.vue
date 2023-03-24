@@ -83,28 +83,33 @@ export default {
             document.getElementById('gen_prod').style.textDecoration = 'none';
       },
       download_products: async function () {
+        let current_date = new Date();
+        let file_name = `product_${current_date.getDate()}_${current_date.getMonth() + 1}_${current_date.getFullYear()}`;
         await fetch(SERVER_PATH + "/product/export", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({})
+            body: JSON.stringify({FileName: file_name})
         });
-        this.openInNewTab(SRC_PATH + 'product.xlsx');
+        this.start_download(SRC_PATH + file_name + '.xlsx');
     },
       download_stat: async function () {
+        let current_date = new Date();
+        let file_name = `statistics_${current_date.getDate()}_${current_date.getMonth() + 1}_${current_date.getFullYear()}`;
         await fetch(SERVER_PATH + "/statistic/export", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({})
-    });
-    this.openInNewTab(SRC_PATH + 'statistics.xlsx');
+            body: JSON.stringify({FileName: file_name})
+        });
+        this.start_download(SRC_PATH + file_name + '.xlsx');
     },
-    openInNewTab: function (href) {
-        Object.assign(document.createElement('a'), {
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            href: href,
-        }).click();
-        }
+    start_download: function (href) {
+        const link = document.createElement('a')
+        link.setAttribute('href', href);
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
   }
 }
 </script>
