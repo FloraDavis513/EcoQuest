@@ -135,9 +135,11 @@ export default {
     get_full_text: function () {
         let full_text = this.current_question.question.text;
         let answers;
-        if(this.current_question.question.answers == null)
+        if(this.current_question.question.answers == null || (typeof this.current_question.question.answers != "object"))
           return full_text;
         answers = JSON.parse(this.current_question.question.answers);
+        if(answers.AllAnswers == null || answers.CorrectAnswers == null)
+          return full_text;
         if(answers.AllAnswers.length == answers.CorrectAnswers)
           return full_text;
         let all_answers = [];

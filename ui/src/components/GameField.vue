@@ -1,7 +1,7 @@
 <template>
     <img v-if="number_round == 1" src="@/assets/dice.png" alt="" id="dice" @click="generate_random_number">
     <div v-if="number_round == 1" id="generated_number">{{ current_number }}</div>
-    <div v-if="number_round == 2" id="next_turn" @click="next_turn">Следующий ход</div>
+    <div v-if="number_round == 2 && !final" id="next_turn" @click="next_turn">Следующий ход</div>
     <div class="round">1 раунд</div>
     <div class="round" @click="next_round">2 раунд</div>
     <input id="price" @blur="save_price">
@@ -64,7 +64,8 @@ export default {
         questions: {},
         second_round_questions: [],
         current_question_id: null,
-        current_question: null
+        current_question: null,
+        final: false
     }
   },
   components: {
@@ -173,30 +174,27 @@ export default {
     next_turn () {
       if( JSON.parse(localStorage.getItem('user')).role == 'player' )
         return;
-        let question = this.second_round_questions[this.second_round_tour * 4 + this.turn];
+        if(this.second_round_tour + 1 >= this.second_round_states[this.turn].length)
+        {
+            this.final = true;
+            return;
+        }
+        let question = this.second_round_questions[this.second_round_tour * this.current_chip_poses.length + this.turn];
         this.current_question = {};
         this.current_question['question'] = question.text;
         this.current_question['product'] = question.product_name;
-        if(this.second_round_tour + 1 >= this.second_round_states[this.turn].length)
-        {
-            this.next = 'Конец';
-            this.$emit('set-question', this.current_question, this.turn);
-            this.$emit("update-poses", this.current_chip_poses);
-            this.$emit("update-question", this.current_question);
-            return;
-        }
-       this.current_chip_poses[this.turn] = this.second_round_states[this.turn][this.second_round_tour + 1];
-       this.$emit('set-question', this.current_question, this.turn);
-       this.$emit("update-poses", this.current_chip_poses);
-       this.$emit("update-question", this.current_question);
-       if(this.turn == this.current_chip_poses.length - 1)
-        {
-            this.turn = 0;
-            ++this.tour;
-            ++this.second_round_tour;
-        }
-        else
-          ++this.turn;
+        this.current_chip_poses[this.turn] = this.second_round_states[this.turn][this.second_round_tour + 1];
+        this.$emit('set-question', this.current_question, this.turn);
+        this.$emit("update-poses", this.current_chip_poses);
+        this.$emit("update-question", this.current_question);
+        if(this.turn == this.current_chip_poses.length - 1)
+          {
+              this.turn = 0;
+              ++this.tour;
+              ++this.second_round_tour;
+          }
+          else
+            ++this.turn;
     },
     go_timer () {
         if( JSON.parse(localStorage.getItem('user')).role == 'player' )
