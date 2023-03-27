@@ -423,7 +423,7 @@ export default {
   },
   updated: function () {
       this.calc_color_round_buttons();
-      this.update_chip_positions();
+      // this.update_chip_positions();
   },
   mounted: function () {
     this.update_chip_positions();

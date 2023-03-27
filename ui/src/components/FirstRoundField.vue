@@ -161,7 +161,7 @@ export default {
         document.getElementById('greeting_message').style = 'resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;outline:none;';
   },
   updated: function() {
-    this.$emit('update-field');
+    // this.$emit('update-field');
   }
 }
 
