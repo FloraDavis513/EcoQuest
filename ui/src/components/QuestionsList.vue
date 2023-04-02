@@ -2,55 +2,101 @@
      <div id="main_area">
         <div v-if="draw === 'questions'" class="grid" id="grid">
             <div class="scroll">
-                <div class="grid_element" v-for="(option, index) in get_questions()" @click="choose_question" :key="index" :fake_id="option.tmp_id" v-bind:el_id="option.id">{{ option.shortText }}</div>
+                <div class="grid_element" v-for="(option, index) in selected_product.questions" @click="choose_question(index)" :key="index">{{ option.shortText }}</div>
                 <div class="grid_element plus" @click="add_question">+</div>
-                <div class="grid_element load" id="load" @click="load_questions">Загрузить из файла</div>
             </div>
         </div>
         <div id="edit_window" class="edit_window" v-if="draw === 'edit'">
             <img @click="to_questions" src="@/assets/go_back.png" alt="">
-            <input id="edit_window_input" class="edit_window_input" placeholder="Введите новое название продукта" :value="cache_product[0]" @blur="save_new_name" />
-            <input id="input_path" placeholder="Введите название файла" />
-            <div class="edit_window_color_title">Выберите новый цвет поля</div>
-            <input id="color_switcher" type="color" style="width:35%;height:25%;" @input="save_new_color">
+            <div v-if="get_preview()" :style="'width:15%;height:15%;margin-left:2.5%;float:left;position:relative;'" id="selected_logo_preview">
+                <img id="logo_preview" :src="get_preview()" style="position:absolute;width:100%;height:100%;">
+                <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;" @change="upload_logo">
+            </div>
+            <div v-else style="width:15%;height:15%;margin-left:5%;float:left;border:0.15vw solid silver;border-radius:0.75vw;color:silver;font-size:2vw;text-align:center;position:relative;">
+                <p style="position:absolute;left:30%;top:1%;">Лого</p> 
+                <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;" @change="upload_logo">
+            </div>
+            <div :style="'width:15%;height:15%;margin-left:2.5%;float:left;border-radius:0.75vw;' + new_version_product.color">
+                <input id="color_switcher" type="color" style="width:100%;height:100%;opacity:0;" @input="save_new_color">
+            </div>
+            <input id="edit_window_input" class="edit_window_input" placeholder="Введите новое название продукта" :value="new_version_product.name" @blur="save_new_name" />
             <div class="edit_window_group_button">
-                <div @click="save_edit" class="button">Сохранить</div>
-                <div @click="reset" class="button">Сбросить</div>
+                <div @click="save_edit" style="margin-left:25%;" class="button">Сохранить</div>
+                <div @click="reset" class="button" style="margin-left: 10%;">Сбросить</div>
             </div>
         </div>
         <div v-if="draw === 'delete'" class="delete_product_window" id="delete_product_window">
             <div id="delete_product_warning">
-                Вы действительно хотите удалить поле "{{selected_product[0]}}" и все связанные с ним задания?
+                Вы действительно хотите удалить поле "{{selected_product.name}}" и все связанные с ним задания?
             </div>
             <div class="delete_window_group_button">
                 <div @click="delete_product" class="button">Да</div>
                 <div @click="cancel_product" class="button">Нет</div>
             </div>
         </div>
-        <div v-if="draw === 'edit_question'" class="edit_question" id="edit_question">
-            <div id="first_line" style="width:100%;">
+        <div v-if="draw === 'edit_question'" id="edit_question" style="height:95%">
+            <div id="first_line" style="width:100%;height:7.5%;">
                 <img style="height:75%;width:7.5%;float:left;margin-right:5%" @click="to_questions" src="@/assets/go_back.png" alt="">
+                <div style="width:50%;float:right;font-size:1.25vw;font-style:italic;" id="short_name_header" resize="false">{{'Дата последнего редактирования: ' + beautify_date(selected_question.lastEditDate)}}</div>
+                <!-- <img style="height:75%;width:7.5%;float:left;margin-right:5%" @click="to_questions" src="@/assets/go_back.png" alt="">
                 <div style="width:50%;float:left;" id="short_name_header" resize="false">Краткое обозначение вопроса</div>
-                <input style="float:left;width:30%;" type="text" maxlength="16" id="short_name" @blur="save_edit_changes" :value="selected_el.shortText" >
+                <input style="float:left;width:30%;" type="text" maxlength="16" id="short_name" @blur="save_edit_changes" :value="selected_question.shortText" > -->
             </div>
-            <div id="second_line" style="width:100%; height:15%;">
-                <div style="width:30%;float:left;" id="category_header">Категория вопроса</div>
-                <select style="float:left;width:30%;" id="type_selector" @blur="save_edit_changes" @input="update_is_media">
-                    <option>С выбором ответа</option>
-                    <option>Без выбора ответа</option>
-                    <option>Вопрос-аукцион</option>
-                    <option>Вопрос с медиа фрагментом</option>
-                </select>
+            <div class="scroll" style="height:80.5%;box-shadow: inset 0 0 20px 1px lightgrey;padding-bottom:2%;">
+                <div id="second_line" style="width:100%;height:10%;margin-top:2%;">
+                    <div style="width:30%;float:left;" id="category_header">Категория вопроса</div>
+                    <select style="float:left;width:30%;" id="type_selector" :value="get_displayed_type()" @blur="save_edit_changes" @input="update_is_media">
+                        <option>С выбором ответа</option>
+                        <option>Без выбора ответа</option>
+                        <option>Вопрос-аукцион</option>
+                        <option>Вопрос с медиа фрагментом</option>
+                    </select>
+                </div>
+                <div id="second_line" style="width:100%; height:10%;margin-left:12.5%;">
+                    <div style="width:50%;float:left;" id="short_name_header" resize="false">Краткое обозначение вопроса</div>
+                    <input style="float:left;width:30%;" type="text" maxlength="16" id="short_name" @blur="save_edit_changes" :value="selected_question.shortText" >
+                </div>
+                <div id="fiveth_line" style="float:left;width:100%;">
+                    <div id="wording_header" resize="false" style="float:left;margin-bottom:1%;">Формулировка вопроса</div>
+                    <div v-if="is_media" @click="media_preview = true" class="button" style="float:right;width:21.35%;margin-top:1.5%;margin-right:10%;padding-top:1.07%;padding-bottom:1.07%;">Выбрать медиа</div>
+                </div>
+                <textarea rows="12" id="wording" :value="selected_question.text" @blur="save_edit_changes"></textarea>
+                <div style="width:30%;height:50%;float:left;margin-left:16%;margin-top:3%;border:2px solid silver;border-radius:0.75vw;">
+                    <div style="text-align:center;font-size: 1.65vw;">Верные ответы</div>
+                    <hr>
+                    <div class="scroll" style="height:70%;width:100%;">
+                        <div class="one_player" v-for="(option, index) in corr_ans" :key="index" :index="index">
+                            <input type="text" readonly="readonly" :placeholder="'Верный ответ'" :value="decorate_short_ans(option)" class="wait_users" @click="show_answer(option, corr_ans, index)">
+                            <div id="delete_player" @click="corr_ans.pop(index)">x</div>
+                        </div>
+                        <div id="plus_player" @click="corr_ans.push('')">+</div>
+                    </div>
+                </div>
+                <div style="width:30%;height:50%;float:left;margin-left:12.5%;margin-top:3%;border:2px solid silver;border-radius:0.75vw;">
+                    <div style="text-align:center;font-size: 1.65vw;">Прочие варианты ответов</div>
+                    <hr>
+                    <div class="scroll" style="height:70%;width:100%;">
+                        <div class="one_player" v-for="(option, index) in ans" :key="index" :index="index">
+                            <input readonly="readonly" :placeholder="'Вариант ответа'" :value="decorate_short_ans(option)" class="wait_users" @click="show_answer(option, ans, index)">
+                            <div id="delete_player" @click="ans.pop(index)">x</div>
+                        </div>
+                        <div id="plus_player" @click="ans.push('')">+</div>
+                    </div>
+                </div>
+                <div id="question_preview" v-show="full_question">
+                    <div style="float:right;margin-top:1%;margin-right:1%;font-size:1.35vw;" @click="close_with_save">X</div>
+                    <div id="wording_header" resize="false" style="text-align: center;margin-left:0;">Формулировка ответа</div>
+                    <textarea rows="12" id="answer" style="margin-left:5%;width:90%;height:70%;" :value="current_ans"></textarea>
+                </div>
+                <div id="media_preview" v-show="media_preview">
+                    <div style="float:right;margin-top:1%;margin-right:1%;font-size:1.35vw;" @click="media_preview = false">X</div>
+                    <img id="img_media_preview" v-if="selected_question.media && selected_question.media.slice(-3) == 'png'" :src="get_preview_media()" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;"/>
+                    <video id="video_media_preview" v-if="selected_question.media && selected_question.media.slice(-3) == 'mp4'" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;" controls="controls" :src="get_preview_media()"/>
+                    <div class="button" style="padding-top:1.05%;padding-bottom:1.05%;width:21.15%;margin-left:18%;" @click="upload_media">Загрузить</div>
+                    <div class="button" style="padding-top:1.05%;padding-bottom:1.05%;width:21.15%;margin-left:18%;" @click="delete_media">Удалить</div>
+                </div>
             </div>
-            <div id="fiveth_line">
-                <div id="wording_header" resize="false">Формулировка вопроса</div>
-            </div>
-            <textarea rows="12" id="wording" :value="selected_el.text" @blur="save_edit_changes"></textarea>
-            <div id="fiveth_line">
-                <div id="wording_header" resize="false">Ответ</div>
-            </div>
-            <textarea rows="2" id="answer" :value="selected_el.answer" @blur="save_edit_changes"></textarea>
-            <input v-if="is_media" id="input_path" style="margin-left:12.5%;margin-top:2%;width:70%;" placeholder="Введите название файла" />
+            
             <div class="delete_window_group_button">
                 <div @click="save_question" class="button">Сохранить</div>
                 <div @click="del_question" class="button">Удалить</div>
@@ -59,53 +105,153 @@
         </div>
         <div v-if="draw === 'delete_question'" class="delete_product_window" id="delete_product_window">
             <div id="delete_product_warning">
-                Вы действительно хотите удалить {{ selected_el.text }}?
+                Вы действительно хотите удалить {{ "\"" + selected_question.shortText + "\"" }}?
             </div>
             <div class="delete_window_group_button">
                 <div @click="delete_question" class="button">Да</div>
                 <div @click="cancel_question" class="button">Нет</div>
             </div>
         </div>
-        <div id="pop_up" class="pop_up" v-if="load">
-            <div class="pop_up_title">Загрузка заданий</div>
-            <input type="file" id="file-uploader" >
-            <div class="pop_up_group_button">
-                <div class="pop_up_button">Загрузить</div>
-                <div @click="cancel_load" class="pop_up_button">Отмена</div>
-            </div>
-        </div>
     </div>
 </template>
 
 <script>
-import { SERVER_PATH } from '../common_const.js'
-
-let wording = '';
-let type = '';
+import { SRC_PATH, SERVER_PATH } from '../common_const.js'
+import { parse } from 'date-fns';
 
 export default {
   name: 'QuestionsList',
-  props:['selected_product', 'products', 'cache_product'],
+  props:['selected_product', 'products'],
   data(){
     return {
-            selected: '1',
-            selected_el: null,
+            selected_question: null,
             draw: 'questions',
-            is_media: false
+            is_media: false,
+            new_version_product: {},
+            type_maping: new Map([ ["TEXT", "Без выбора ответа"], ["AUCTION", "Вопрос-аукцион"], ["TEXT_WITH_ANSWERS", "С выбором ответа"], ["MEDIA", "Вопрос с медиа фрагментом"], ]),
+            invert_type_maping: new Map([ ["Без выбора ответа", "TEXT"], ["Вопрос-аукцион", "AUCTION"], ["С выбором ответа", "TEXT_WITH_ANSWERS"], ["Вопрос с медиа фрагментом", "MEDIA"], ]),
+            corr_ans: [],
+            ans: [],
+            full_question: false,
+            current_ans_arr: null,
+            current_ans_index: null,
+            current_ans: null,
+            media_preview: false,
     }
   },
   methods: {
+        upload_media: async function () {
+            var input = document.createElement('input');
+            input.type = 'file';
+
+            input.onchange = async e =>  { 
+                let file = e.target.files[0];
+                let formData = new FormData();
+                formData.set('uploads', file);
+                if(!this.selected_question.media)
+                {
+                    await fetch(SERVER_PATH + "/question/media/create/" + this.selected_question.questionId, {
+                    method: "POST",
+                    body: formData
+                    });
+                }
+                else
+                {
+                    await fetch(SERVER_PATH + "/question/media/update/" + this.selected_question.questionId, {
+                    method: "POST",
+                    body: formData
+                    }).then( this.$emit('reload-question') );
+                } 
+            }
+            input.click();
+        },
+        delete_media: async function () {
+            fetch(SERVER_PATH + "/question/media/delete/" + this.selected_question.questionId, {
+                    method: "DELETE",
+                    });
+        },
+        upload_logo: async function () {
+            const uploadFileEle = document.getElementById("selected_logo");
+            let file = uploadFileEle.files[0];
+            let formData = new FormData();
+            formData.set('uploads', file);
+            if(!this.selected_product.logo)
+            {
+                await fetch(SERVER_PATH + "/product/logo/create/" + this.selected_product.productId, {
+                method: "POST",
+                body: formData
+                });
+                document.getElementById("logo_preview").src = this.get_preview();
+            }
+            else
+            {
+                await fetch(SERVER_PATH + "/product/logo/update/" + this.selected_product.productId, {
+                method: "POST",
+                body: formData
+                });
+                document.getElementById("logo_preview").src = this.get_preview();
+            }
+        },
+        get_preview: function () {
+            if(!this.selected_product.logo)
+                return null;
+            const regex = /logo\d+.\w+/g;
+            const found = this.selected_product.logo.match(regex);
+            return SRC_PATH + found + '?' + Date.now();
+        },
+        get_preview_media: function () {
+            if(!this.selected_question.media)
+                return null;
+            const regex = /media\d+.\w+/g;
+            const found = this.selected_question.media.match(regex);
+            return SRC_PATH + found + '?' + Date.now();
+        },
+        decorate_short_ans: function (full_ans) {
+            if(full_ans.length > 20)
+                return full_ans.slice(0, 20) + '...';
+            return full_ans;
+        },
+        close_with_save: function () {
+            this.full_question = false;
+            this.current_ans_arr[this.current_ans_index] = document.getElementById('answer').value;
+        },
+        show_answer: function (ans, arr, index) {
+            this.full_question = true;
+            this.current_ans = ans;
+            this.current_ans_arr = arr;
+            this.current_ans_index = index;
+        },
+        get_displayed_type: function () {
+            return this.type_maping.get(this.selected_question.type);
+        },
+        get_db_type: function (user_type) {
+            return this.invert_type_maping.get(user_type);
+        },
         reset: function () {
-            this.$emit('reset-edit');
+            if(document.getElementById('color_switcher'))
+            {
+                this.new_version_product.color = 'color:white;background:' + document.getElementById('avatar').style.backgroundColor;
+                let rgb2hex=c=>'#'+c.match(/\d+/g).map(x=>(+x).toString(16).padStart(2,0)).join``;
+                document.getElementById('color_switcher').value = rgb2hex(document.getElementById('avatar').style.backgroundColor);
+                this.new_version_product.name = this.selected_product.name;
+            }
+            if(document.getElementById('wording'))
+            {
+                this.selected_question.shortText = this.selected_product.questions[this.selected_question.index].shortText;
+                this.selected_question.text = this.selected_product.questions[this.selected_question.index].text;
+                this.selected_question.type = this.selected_product.questions[this.selected_question.index].type;
+                this.selected_question.answers = this.selected_product.questions[this.selected_question.index].answers;
+            }
         },
         save_new_name: function () {
             var color = String(document.getElementById('color_switcher').value);
             var name = document.getElementById("edit_window_input").value;
-            this.$emit('final-edit-product', name, 'color:white;background:' + color);
+            this.new_version_product.color = 'color:white;background:' + color;
+            this.new_version_product.name = name;
         },
         save_new_color: function () {
             var color = String(document.getElementById('color_switcher').value);
-            this.$emit('final-edit-product', this.cache_product[0], 'color:white;background:' + color);
+            this.new_version_product.color = 'color:white;background:' + color;
         },
         update_is_media: function () {
             if(document.getElementById('type_selector'))
@@ -130,109 +276,68 @@ export default {
                 });
         },
         to_questions: function () {
-            this.$emit('reset-edit');
+            this.reset();
             this.draw = 'questions';
-            var edit = document.getElementById("edit");
-            var click_delete = document.getElementById("delete");
-            click_delete.style.opacity = 1;
-            edit.style.opacity = 1;
         },
         save_edit: function () {
-            this.$emit('save-edit');
+            this.$emit('final-edit-product', this.new_version_product.name, this.new_version_product.color);
             var edit = document.getElementById("edit");
             var click_delete = document.getElementById("delete");
             click_delete.style.opacity = 1;
             edit.style.opacity = 1;
         },
-        choose_question: function (event) {
+        choose_question: function (index) {
             this.draw = 'edit_question';
-            this.selected = event.target.getAttribute("el_id");
-            let fake_id = event.target.getAttribute("fake_id");
-            var cur_el;
-            var local_selected = this.selected;
-            this.get_questions().forEach(function(item) {
-                if(local_selected && local_selected == item.id)
-                    cur_el = item;
-                else if(fake_id && item.tmp_id == fake_id)
-                    cur_el = item;
-            });
-            this.selected_el = cur_el;
-            let mapping = new Map();
-            mapping.set("TEXT", "Без выбора ответа").set("AUCTION", "Вопрос-аукцион").set("TEXT_WITH_ANSWERS", "С выбором ответа").set("MEDIA", "Вопрос с медиа фрагментом");
-            wording = cur_el.text;
-            
-            type = mapping.get(cur_el.questionType);
-            
+            this.selected_question = JSON.parse(JSON.stringify(this.selected_product.questions[index]));
+            this.selected_question.index = index;
+            this.is_media = this.selected_question.type === "MEDIA";
+            this.corr_ans = JSON.parse(this.selected_question.answers).CorrectAnswers;
+            this.ans = JSON.parse(this.selected_question.answers).AllAnswers.filter(item => !this.corr_ans.includes(item));
         },
         del_question: function () {
             this.draw = 'delete_question';
         },
         delete_question: function () {
             this.draw = 'questions';
-            var product_name = this.selected_product[0];
-            var deleted_question = this.selected;
-            this.products.forEach(function(item) {
-                if(product_name == item.text)
-                    item.questions = item.questions.filter(option => option.id != deleted_question);
-            });
-            fetch(SERVER_PATH + "/product/question/" + String(deleted_question), {
-                method: "DELETE",
-                headers: {'Content-Type': 'application/json'}
-                });
+            this.$emit('delete-question', this.selected_question.questionId);
         },
         cancel_question: function () {
             this.draw = 'edit_question';
         },
         save_question: function () {
-            let mapping = new Map();
-            mapping.set("Без выбора ответа", "TEXT").set("Вопрос-аукцион", "AUCTION").set("С выбором ответа", "TEXT_WITH_ANSWERS").set("Вопрос с медиа фрагментом", "MEDIA");
-            this.$emit('edit-question', this.selected_product[0], this.selected_el, this.selected, mapping.get(document.getElementById("type_selector").value), document.getElementById("wording").value, document.getElementById('short_name').value, document.getElementById('answer').value);
+            this.selected_question.answers = JSON.stringify({AllAnswers:this.ans.concat(this.corr_ans), CorrectAnswers:this.corr_ans});
+            this.$emit('edit-question', this.selected_question);
             this.draw = 'questions';
         },
-        get_questions: function () {
-            var product_name = this.selected_product[0];
-            var questions;
-            this.products.forEach(function(item) {
-                if(product_name == item.text)
-                    questions = item.questions;
-            });
-            return questions;
-        },
         add_question: function () {
-            this.$emit('add-question', this.selected_product[0]);
+            this.$emit('add-question');
         },
         check_delete_product: function () {
             this.draw = 'delete';
         },
         edit_product: function () {
             this.draw = 'edit';
+            this.new_version_product.color = this.selected_product.colour;
+            this.new_version_product.name = this.selected_product.name;
         },
         save_edit_changes: function () {
-            var product_name = this.selected_product[0];
-            var selected = this.selected_el;
-            this.products.forEach(function(item) {
-                if(product_name == item.text)
-                    item.questions.forEach(function(inner_item) {
-                        if(selected == inner_item)
-                        {
-                            inner_item.shortText = document.getElementById('short_name').value;
-                            inner_item.questionType = document.getElementById('type_selector').value;
-                            inner_item.text = document.getElementById('wording').value;
-                            inner_item.answer = document.getElementById('answer').value;
-                        }
-                    });
-            });
+            console.log(document.getElementById('short_name').value);
+            console.log(this.get_db_type(document.getElementById('type_selector').value));
+            console.log(document.getElementById('wording').value);
+
+            this.selected_question.shortText = document.getElementById('short_name').value;
+            this.selected_question.type = this.get_db_type(document.getElementById('type_selector').value);
+            this.selected_question.text = document.getElementById('wording').value;
+            // this.selected_question.answers = document.getElementById('answer').value;
         },
+        beautify_date: function (date) {
+            let a = parse(date, 'M/d/yyyy hh:mm:ss aa', new Date());
+            return a.toLocaleString('ru-RU');
+        }
   },
 }
 
 document.addEventListener("DOMNodeInserted", function () {
-    if(document.getElementById("type_selector")){
-        var selector = document.getElementById("type_selector");
-        selector.value = type;
-        var wording_1 = document.getElementById("wording");
-        wording_1.value = wording;
-    }
     if(document.getElementById('color_switcher'))
     {
         let rgb2hex=c=>'#'+c.match(/\d+/g).map(x=>(+x).toString(16).padStart(2,0)).join``;
@@ -246,7 +351,7 @@ document.addEventListener("DOMNodeInserted", function () {
 #main_area{
     float: left;
     height: 81%;
-    width: 70%;
+    width: 75%;
     margin-top: 3%;
     margin-left: 2%;
 }
@@ -350,8 +455,15 @@ input{
 }
 
 #edit_window_input{
-    margin-top: 5%;
-    width: 80%;
+    margin-top: 5.5%;
+    margin-left: 2%;
+    width: 50%;
+    border-bottom: 3px solid black;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    outline:none;
+    font-size: 2.5vw;
 }
 
 #input_path{
@@ -364,7 +476,6 @@ input{
     margin-top: 2%;
     width: 90%;
     height: 20%;
-    margin-left: 12%;
 }
 
 .edit_window_button{
@@ -392,30 +503,28 @@ input{
 }
 
 #delete_product_warning{
-    width: 80%;
-    font-size: 250%;
+    width: 100%;
+    font-size: 2.5vw;
     text-align: center;
 }
 
 .delete_window_group_button{
     width: 80%;
-    margin-left: 15%;
 }
 
 .button{
     float: left;
-    width: 30%;
+    width: 26.6%;
     background-color: green;
     text-align: center;
-    padding-top: 1.5%;
-    padding-bottom: 1.5%;
+    padding-top: 1.33%;
+    padding-bottom: 1.33%;
     color: white;
-    font-size: 1.2vw;
+    font-size: 1.1vw;
     font-weight: bold;
     border-radius: 20px;
-    margin-left: 4%;
-    margin-right: 10%;
-    margin-top: 5%;
+    margin-left: 23.4%;
+    margin-top: 1.75%;
 }
 
 .button:hover{
@@ -442,8 +551,8 @@ input{
 }
 
 #wording{
-    width: 70%;
-    height: 75%;
+    width: 80%;
+    height: 50%;
     font-size: 1.4vw;
     resize: none;
     margin-left: 12.5%;
@@ -549,7 +658,7 @@ input{
 #wording_header{
     font-size: 1.65vw;
     margin-left: 12.5%;
-    margin-top: 1%;
+    margin-top: 2%;
 }
 
 img{
@@ -567,5 +676,78 @@ img:hover {
     resize: none;
     margin-left: 12.5%;
     margin-top: 1%;
+}
+
+.wait_users{
+    margin-top: 2%;
+    margin-left: 10%;
+    width: 75%;
+    border: solid black 0.15vw;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.3vw;
+    padding-top: 1.5%;
+    padding-bottom: 1.5%;
+    float: left;
+}
+
+#delete_player{
+    float: left;
+    width: 5%;
+    margin-top: 4%;
+    margin-left: 2%;
+    font-size: 1.3vw;
+}
+
+#plus_player{
+    margin-top: 2%;
+    margin-left: 10%;
+    width: 80%;
+    text-align: center;
+    font-size: 1.5vw;
+    font-weight: bold;
+    float: left;
+}
+
+hr{
+    width: 90%;
+    color: silver;
+    float: left;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+#question_preview{
+  position: absolute;
+  background-color: white;
+  border: 0.15vw solid black;
+  left: 27.5%;
+  width: 45%;
+  top: 30%;
+  height: 40%;
+  border-radius: 1vw;
+}
+
+#media_preview{
+  position: absolute;
+  background-color: white;
+  border: 0.15vw solid black;
+  left: 12.5%;
+  width: 75%;
+  top: 20%;
+  height: 75%;
+  border-radius: 1vw;
+}
+
+#selected_logo{
+    opacity: 0;
+}
+
+#selected_media{
+    opacity: 0;
+}
+
+#img_media_preview:hover{
+    transform: scale(1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
 }
 </style>
