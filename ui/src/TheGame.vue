@@ -46,7 +46,6 @@ export default {
       mapping.set("team_1", 0).set("team_2", 1).set("team_3", 2).set("team_4", 3);
       this.game.state.helps[mapping.get(team)][n] = false;
 
-      console.log('use_help');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
@@ -71,7 +70,6 @@ export default {
           if(item.name == this.game.state.current_question.product.name)
             item.color = this.game.state.current_question.product.colour;
         });
-        console.log('give_puzzle');
         fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
@@ -82,7 +80,6 @@ export default {
       let mapping = new Map();
       mapping.set("team_1", 0).set("team_2", 1).set("team_3", 2).set("team_4", 3);
       this.game.state.scores[mapping.get(team)] += Number(this.game.state.price);
-      console.log('give_score');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
@@ -131,9 +128,6 @@ export default {
         this.game.state.themes.push(JSON.parse(JSON.stringify(themes_sber)));
         this.game.state.themes.push(JSON.parse(JSON.stringify(themes_sber)));
         this.game.state.themes.push(JSON.parse(JSON.stringify(themes_sber)));
-        console.log(this.game.state);
-
-        console.log('set_unique');
         fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
@@ -142,7 +136,6 @@ export default {
     },
     update_poses: function (new_poses) {
       this.game.state.current_chip_poses = new_poses;
-      console.log('update_poses');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -151,7 +144,6 @@ export default {
     },
     update_current_number: function (new_number) {
       this.game.state.current_number = new_number;
-      console.log('update_current_number');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -162,7 +154,6 @@ export default {
       if( JSON.parse(localStorage.getItem('user')).role == 'player' )
         return;
       this.game.state.current_question = new_question;
-      console.log('update_current_question');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -172,7 +163,6 @@ export default {
     update_price: function (price) {
       this.game.state.price = price;
       this.game.state.scores = [0, 0, 0, 0];
-      console.log('update_price');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -181,7 +171,6 @@ export default {
     },
     update_number_round: function (round) {
       this.game.state.number_round = round;
-      console.log('update_number_round');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -203,7 +192,6 @@ export default {
         results.Teams.sort((a, b) => a.Score - b.Score);
         for(let i = 0; i < results.Teams.length; ++i)
           results.Teams[i].Place = results.Teams.length - i;
-        console.log(results);
         fetch(SERVER_PATH + '/statistic/create', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -212,10 +200,7 @@ export default {
       }
     },
     update_timer: function (hours, minutes, seconds) {
-      
       this.game.state.timer = [hours, minutes, seconds];
-      console.log(this.game.state);
-      console.log('update_timer');
       fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -230,7 +215,6 @@ export default {
             this.game.state = JSON.parse(this.game.state);
         this.game.state.helps = [[true, true, true, true], [true, true, true, true], [true, true, true, true], [true, true, true, true]];
 
-        console.log('fill_helps');
         fetch(SERVER_PATH + '/game/update/stateAndQuestion', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
@@ -262,13 +246,10 @@ export default {
                 headers: {'Content-Type': 'application/json'}
                 }).then( res => res.json() ).then( data => this.game = data );
         this.game.state = JSON.parse(this.game.state);
-        console.log(this.game);
         if( this.game.state.themes == null )
           this.set_unique();
         if( this.game.state.helps == null )
           this.fill_helps();
-          
-        console.log(this.game);
     }
 }
 </script>

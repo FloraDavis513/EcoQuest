@@ -321,14 +321,9 @@ export default {
             this.new_version_product.name = this.selected_product.name;
         },
         save_edit_changes: function () {
-            console.log(document.getElementById('short_name').value);
-            console.log(this.get_db_type(document.getElementById('type_selector').value));
-            console.log(document.getElementById('wording').value);
-
             this.selected_question.shortText = document.getElementById('short_name').value;
             this.selected_question.type = this.get_db_type(document.getElementById('type_selector').value);
             this.selected_question.text = document.getElementById('wording').value;
-            // this.selected_question.answers = document.getElementById('answer').value;
         },
         beautify_date: function (date) {
             let a = parse(date, 'M/d/yyyy hh:mm:ss aa', new Date());

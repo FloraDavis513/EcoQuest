@@ -95,7 +95,6 @@ export default {
             this.is_reset = true;
         },
         add: function (add_index) {
-            console.log(add_index);
             var change_user = this.options[add_index];
             this.$emit('add-master', change_user);
             this.options = this.options.filter((option, index) => index != add_index);

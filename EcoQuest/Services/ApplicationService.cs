@@ -1,8 +1,11 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -1737,6 +1740,153 @@ namespace EcoQuest
             db.Games.RemoveRange(targetGames);
 
             db.SaveChanges();
+        }
+
+        public IResult GetRandomQuiz(eco_questContext db, long id)
+        {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == id
+                                select q).FirstOrDefault();
+            if(targetQuiz != null)
+                db.Quiz.Remove(targetQuiz);
+            db.SaveChanges();
+            var questions = db.Products.Join(db.Questions,
+                p => p.ProductId,
+                q => q.ProductId,
+                (p, q) => new
+                {
+                    QuestionId = q.QuestionId,
+                    ProductName = p.Name,
+                    Text = q.Text,
+                    Answers = q.Answers,
+                    Round = p.Round,
+                    Type = q.Type
+                }).Where(q => q.Round == 3);
+            var list = questions.ToList();
+            Random rand = new Random();
+            HashSet<int> unique_ids = new HashSet<int>();
+            while (unique_ids.Count < 15)
+                unique_ids.Add(rand.Next(list.Count));
+
+            List<object> result = new List<object>();
+            foreach (var question_id in unique_ids)
+                result.Add(list.ElementAt(question_id));
+
+            Quiz newQuiz = new Quiz()
+            {
+                UserId = id,
+                Duration = 0,
+                CurrentQuestion = 0,
+                CorrectAnswers = 0,
+                Helps = "{\"Fifty\":3,\"MissAnswer\":3}",
+                Questions = JsonSerializer.Serialize(result, new JsonSerializerOptions()
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                })
+            };
+
+            db.Quiz.Add(newQuiz);
+            db.SaveChanges();
+
+            return Results.Json(newQuiz);
+        }
+
+        public IResult GetQuiz(eco_questContext db, GetQuizDTO quiz)
+        {
+            var questions = db.Products.Join(db.Questions,
+                p => p.ProductId,
+                q => q.ProductId,
+                (p, q) => new
+                {
+                    QuestionId = q.QuestionId,
+                    ProductId = q.ProductId,
+                    ProductName = p.Name,
+                    Text = q.Text,
+                    Answers = q.Answers,
+                    Type = q.Type
+                }).Where(u => quiz.SelectedProduct.Contains(u.ProductId));
+            var list = questions.ToList();
+
+            Quiz newQuiz = new Quiz()
+            {
+                UserId = quiz.UserId,
+                Duration = 0,
+                CurrentQuestion = 0,
+                CorrectAnswers = 0,
+                Helps = "{\"Fifty\":3,\"MissAnswer\":3}",
+                Questions = JsonSerializer.Serialize(questions, new JsonSerializerOptions()
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                })
+            };
+
+            db.Quiz.Add(newQuiz);
+            db.SaveChanges();
+
+            return Results.Json(newQuiz);
+        }
+
+        public IResult CheckAnswer(eco_questContext db, CheckAnswerDTO answer)
+        {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == answer.UserId
+                                select q).FirstOrDefault();
+
+            targetQuiz.Duration = answer.Duration;
+
+            Question? targetQuestion = (from q in db.Questions
+                                        where q.QuestionId == answer.QuestionId
+                                        select q).FirstOrDefault();
+            if(targetQuestion == null)
+                return Results.BadRequest("Вопрос не найден");
+            QuestionAnswersDTO? questionAnswersDTO = JsonSerializer.Deserialize<QuestionAnswersDTO>(targetQuestion.Answers);
+
+            bool is_correct_answer = questionAnswersDTO.CorrectAnswers.Contains(answer.Answer);
+            targetQuiz.CorrectAnswers += is_correct_answer ? 1 : 0;
+
+            db.SaveChanges();
+
+            return Results.Json(new { result = is_correct_answer, 
+                                      correct_answer = questionAnswersDTO.CorrectAnswers.ElementAt(0) });
+        }
+
+        public IResult GetResult(eco_questContext db, long id)
+        {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == id
+                                select q).FirstOrDefault();
+            var questions = JsonSerializer.Deserialize<ICollection<QuestionAnswersDTO>>(targetQuiz.Questions);
+            return Results.Json(new { total_question = questions.Count(), correct_answer = targetQuiz.CorrectAnswers, total_time = targetQuiz.Duration });
+        }
+
+        public IResult UseHelp(eco_questContext db, UseHelp help)
+        {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == help.UserId
+                                select q).FirstOrDefault();
+            var helps = JsonSerializer.Deserialize<HelpsDTO>(targetQuiz.Helps);
+
+            targetQuiz.Duration = help.Duration;
+            bool is_fifty = help.Help == 1;
+            if (is_fifty)
+            {
+                --helps.Fifty;
+            }
+            else
+            {
+                --helps.MissAnswer;
+                ++targetQuiz.CurrentQuestion;
+            }
+            var new_helps = JsonSerializer.Serialize(helps);
+            targetQuiz.Helps = new_helps;
+
+            db.SaveChanges();
+
+            return Results.Ok();
         }
     }
 }

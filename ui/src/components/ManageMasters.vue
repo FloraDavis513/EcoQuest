@@ -57,7 +57,6 @@ export default {
         this.$emit('logout');
     },
     save_edit: function(first, middle, last, login){
-      console.log(first, middle, last, login);
       this.selected.firstName = first;
       this.selected.patronymic = middle;
       this.selected.lastName = last;

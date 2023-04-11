@@ -149,7 +149,6 @@ export default {
     },
     change_pass: function()
     {
-        console.log("updated");
         let pass = document.getElementById("password");
         let rep_pass = document.getElementById("repeatPassword");
         if(pass && rep_pass)

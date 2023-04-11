@@ -106,6 +106,12 @@ namespace EcoQuest
             _app.MapPost("/user/update/info", _service.UserUpdateInfo);
             _app.MapPost("/user/update/password", _service.UserUpdatePassword);
             _app.MapPost("/user/update/password/reset", _service.UserUpdatePasswordReset);
+
+            _app.MapGet("/quiz/get/random/{id:long}", _service.GetRandomQuiz);
+            _app.MapPost("/quiz/get", _service.GetQuiz);
+            _app.MapPost("/quiz/checkAnswer", _service.CheckAnswer);
+            _app.MapGet("/quiz/result/{id:long}", _service.GetResult);
+            _app.MapPost("/quiz/help", _service.UseHelp);
         }
     }
 }

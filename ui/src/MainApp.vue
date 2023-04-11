@@ -6,6 +6,8 @@ import TheGame from './TheGame.vue'
 import GameLobby from './GameLobby.vue'
 import MasterPanel from './MasterPanel.vue'
 import RegistrationForm from './RegistrationForm.vue'
+import GamerMenu from './GamerMenu.vue'
+import TheQuiz from './TheQuiz.vue'
 
 const routes = {
   '/': AuthForm,
@@ -16,7 +18,9 @@ const routes = {
   '/game': TheGame,
   '/lobby': GameLobby,
   '/status': MasterPanel,
-  '/auth/registration': RegistrationForm
+  '/auth/registration': RegistrationForm,
+  '/gamer': GamerMenu,
+  '/quiz': TheQuiz,
 }
 
 export default {
@@ -41,6 +45,10 @@ export default {
       window.location.href = "#/fields";
       this.currentPath = window.location.hash
     },
+    login_player() {
+      window.location.href = "#/gamer";
+      this.currentPath = window.location.hash
+    },
     log_out() {
       window.location.href = "#/auth/login";
       this.currentPath = window.location.hash
@@ -62,6 +70,11 @@ export default {
       window.location.href = "#/auth/registration";
       this.currentPath = window.location.hash
     },
+    start_quiz(quiz_products) {
+      window.location.href = "#/quiz";
+      this.currentPath = window.location.hash;
+      this.quiz_products = quiz_products;
+    },
   },
   computed: {
     currentView() {
@@ -77,7 +90,7 @@ export default {
 </script>
 
 <template>
-  <component ref="component" :is="currentView" :game_id="game_id" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" />
+  <component ref="component" :is="currentView" :game_id="game_id" :quiz_products="quiz_products" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" @login-player="login_player" @start-quiz="start_quiz" />
 </template>
 
 <style>

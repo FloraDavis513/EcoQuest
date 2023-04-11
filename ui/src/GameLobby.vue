@@ -73,7 +73,6 @@ export default {
             const itemID = evt.dataTransfer.getData('itemID');      
             const item = this.players.find((item) => item.PlayerId == itemID);     
             item.List = list;
-            console.log(item);
             await fetch(SERVER_PATH + '/game/state/players/update/' + this.game_id, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -194,8 +193,6 @@ export default {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({gameId:this.game_id, state:JSON.stringify(this.game.state), currentQuestionId: null}),
                 });
-                    
-                console.log(this.game.state);
             }
             this.$emit('start-game');
         },

@@ -7,8 +7,6 @@ namespace EcoQuest
         public eco_questContext() { }
         public eco_questContext(DbContextOptions<eco_questContext> options) : base(options) { }
 
-        public virtual DbSet<CmdaExec> CmdaExecs { get; set; } = null!;
-        public virtual DbSet<FlywaySchemaHistory> FlywaySchemaHistories { get; set; } = null!;
         public virtual DbSet<Game> Games { get; set; } = null!;
         public virtual DbSet<GameBoard> GameBoards { get; set; } = null!;
         public virtual DbSet<GameBoardsProduct> GameBoardsProducts { get; set; } = null!;
@@ -16,6 +14,7 @@ namespace EcoQuest
         public virtual DbSet<Question> Questions { get; set; } = null!;
         public virtual DbSet<Statistic> Statistics { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<Quiz> Quiz { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -23,30 +22,6 @@ namespace EcoQuest
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<CmdaExec>(entity =>
-            {
-                entity.HasNoKey();
-                entity.ToTable("cmda_exec");
-                entity.Property(e => e.CmdaOutput).HasColumnName("cmda_output");
-            });
-
-            modelBuilder.Entity<FlywaySchemaHistory>(entity =>
-            {
-                entity.HasKey(e => e.InstalledRank).HasName("flyway_schema_history_pk");
-                entity.ToTable("flyway_schema_history", "\"$user\", public");
-                entity.HasIndex(e => e.Success, "flyway_schema_history_s_idx");
-                entity.Property(e => e.InstalledRank).ValueGeneratedNever().HasColumnName("installed_rank");
-                entity.Property(e => e.Checksum).HasColumnName("checksum");
-                entity.Property(e => e.Description).HasMaxLength(200).HasColumnName("description");
-                entity.Property(e => e.ExecutionTime).HasColumnName("execution_time");
-                entity.Property(e => e.InstalledBy).HasMaxLength(100).HasColumnName("installed_by");
-                entity.Property(e => e.InstalledOn).HasColumnType("timestamp without time zone").HasColumnName("installed_on").HasDefaultValueSql("now()");
-                entity.Property(e => e.Script).HasMaxLength(1000).HasColumnName("script");
-                entity.Property(e => e.Success).HasColumnName("success");
-                entity.Property(e => e.Type).HasMaxLength(20).HasColumnName("type");
-                entity.Property(e => e.Version).HasMaxLength(50).HasColumnName("version");
-            });
-
             modelBuilder.Entity<Game>(entity =>
             {
                 entity.ToTable("games");
@@ -150,6 +125,20 @@ namespace EcoQuest
                 entity.Property(e => e.Patronymic).HasColumnType("character varying").HasColumnName("patronymic");
                 entity.Property(e => e.Role).HasColumnType("character varying").HasColumnName("role");
                 entity.Property(e => e.Status).HasColumnType("character varying").HasColumnName("status");
+            });
+
+            modelBuilder.Entity<Quiz>(entity =>
+            {
+                entity.ToTable("quiz");
+                entity.HasIndex(e => e.QuizId, "quiz_quiz_id_unique").IsUnique();
+                entity.Property(e => e.QuizId).HasColumnName("quiz_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.Duration).HasColumnName("duration");
+                entity.Property(e => e.CurrentQuestion).HasColumnName("current_question");
+                entity.Property(e => e.CorrectAnswers).HasColumnName("correct_answers");
+                entity.Property(e => e.Questions).HasColumnType("character varying").HasColumnName("questions");
+                entity.Property(e => e.Helps).HasColumnType("character varying").HasColumnName("helps");
+                entity.HasOne(d => d.User).WithOne(p => p.Quiz).HasForeignKey<Quiz>(d => d.UserId).HasConstraintName("quiz_fkey");
             });
 
             OnModelCreatingPartial(modelBuilder);

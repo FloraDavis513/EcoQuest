@@ -114,7 +114,6 @@ export default {
         select_product: function(selected){
             this.current_view = 'questions';
             this.selected_product = selected;
-            console.log(this.selected_product);
         },
         delete_product: function(){
             this.$refs.q_list.check_delete_product();
@@ -161,7 +160,6 @@ export default {
         },
         add_question: async function(){
             this.selected_product.questions.push({answers:'', type:'TEXT_WITH_ANSWERS', shortText:'', text:'', media: null});
-            console.log(this.selected_product);
             await fetch(SERVER_PATH + "/product/update", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
@@ -170,7 +168,6 @@ export default {
             this.read_product_list();
         },
         delete_question: async function(id){
-            console.log("delete question " + id);
             await fetch(SERVER_PATH + "/question/delete/" + String(id), {
                 method: "DELETE",
                 headers: {'Content-Type': 'application/json'},

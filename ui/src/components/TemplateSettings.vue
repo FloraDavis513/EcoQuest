@@ -228,7 +228,6 @@ export default {
       if(index < 5)
       this.second_round_bar[index] = selector.value != 'Не выбрано';
 
-      console.log(this.get_products_by_round());
       this.get_products_by_round().forEach(item => {
         if(item.name == selector.value)
         {
@@ -243,7 +242,6 @@ export default {
         }
       });
 
-      console.log(this.get_products_by_round());
     },
     get_products_by_round: function()
     {
@@ -291,7 +289,6 @@ export default {
       }).then( res => res.json() ).then( data => this.current_game = data );
       this.current_game.state = JSON.parse(this.current_game.state);
       this.date = parse(this.current_game.date, 'M/d/yyyy, hh:mm:ss aa', new Date());
-      console.log(this.current_game);
       this.$emit('show-game');
     },
     generate_config: function () {
@@ -301,7 +298,6 @@ export default {
           {
             const regex = /logo\d+.\w+/g;
             const found = item.logo ? item.logo.match(regex) : null;
-            console.log({name:item.name, colour:item.colour, logo:found ? found[0] : found});
             config.push({name:item.name, colour:item.colour, logo:found ? found[0] : found});
           }
       });
@@ -322,9 +318,6 @@ export default {
     add_game: async function () {
       let current_date = new Date();
       let date_string = current_date.toLocaleString('en-US', { timeZone: 'Asia/Yekaterinburg' });
-      let save_date = parse(date_string, 'dd.MM.yyyy, HH:mm:ss', new Date());
-      console.log(date_string);
-      console.log(save_date);
       let base_config = this.generate_config();
       base_config['numFields'] = this.template.numFields;
       base_config['second_round_config'] = this.generate_second_round_config();
@@ -363,8 +356,6 @@ export default {
       this.current_game.state.questions_round_1 = this.generate_questions_round_1();
       this.current_game.state.numFields = this.template.numFields;
       this.current_game.state.joined_players = [];
-      // this.current_game.state.field_config = this.field_config;
-      console.log(this.current_game.state);
       this.current_game.state = JSON.stringify(this.current_game.state);
       this.current_game.date = this.date.toLocaleString('en-US', { timeZone: 'Asia/Yekaterinburg' });
       await fetch(SERVER_PATH + "/game/update", {

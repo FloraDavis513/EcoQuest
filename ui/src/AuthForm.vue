@@ -98,6 +98,8 @@ export default {
                 this.$emit('login-master');
             if(JSON.parse(localStorage.getItem('user')).role == 'admin')
                 this.$emit('login-admin');
+            if(JSON.parse(localStorage.getItem('user')).role == 'player')
+                this.$emit('login-player');
         },
         log_in_player: async function () {
             var room_id = document.getElementById('room_id').value;

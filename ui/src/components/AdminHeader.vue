@@ -73,7 +73,6 @@ export default {
           this.$emit('logout');
       },
       pop_up_profile_menu: function () {
-            console.log('focus');
           this.vis = !this.vis;
       },
       underline_up: function () {

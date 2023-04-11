@@ -19,5 +19,7 @@
 
         public virtual ICollection<GameBoard> GameBoards { get; set; }
         public virtual ICollection<Game> Games { get; set; }
+
+        public virtual Quiz Quiz { get; set; } = null!;
     }
 }

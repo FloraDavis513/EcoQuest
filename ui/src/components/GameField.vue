@@ -123,7 +123,6 @@ export default {
         this.current_question = {};
         this.current_question['current_pos'] = current_pos;
         this.current_question['question'] = this.questions[current_pos][0];
-        console.log(this.questions[current_pos][0]);
         this.current_question['product'] = this.game.state.field_config[current_pos];
         [this.questions[current_pos][0], this.questions[current_pos][this.questions[current_pos].length - 1]] = [this.questions[current_pos][this.questions[current_pos].length - 1], this.questions[current_pos][0]];
         this.$emit('set-question', this.current_question, this.turn);
@@ -354,7 +353,6 @@ export default {
               break;
           }
       }
-      console.log(current_pos);
 
       this.current_question = {};
       this.current_question['current_pos'] = current_pos;

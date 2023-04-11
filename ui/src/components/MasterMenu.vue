@@ -69,14 +69,11 @@ export default {
       this.$emit('save-tmpl-name', document.getElementById('template_name').value)
     },
     save_template: async function () {
-      console.log(this.template);
       this.template.products.forEach(item => {
         if(item.round == 2 && item.second_round_repeating != null)
         {
             let result = '';
             item.second_round_repeating.forEach(field => result = result + String(field));
-            console.log(item.second_round_repeating);
-            console.log(result);
             item.numOfRepeating = Number(result);
         }
       });
