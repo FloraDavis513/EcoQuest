@@ -20,6 +20,15 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label" for="name">Роль:</label>
+                    <select id="role_selector" style="margin-left:2.5%;font-size:1.2vw;">
+                        <option>Администратор</option>
+                        <option>Ведущий</option>
+                        <option>Игрок</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label" for="login">Логин</label>
                     <input type="text" class="form-control" id="login" placeholder="Введите логин">
                 </div>
@@ -60,6 +69,14 @@ export default {
     {
         this.$emit('already-registered');
     },
+    beautify_role: function(input_role) {
+        if(input_role == "Администратор")
+            return "admin";
+        else if(input_role == "Ведущий")
+            return "master";
+        else if(input_role == "Игрок")
+            return "player";
+    },
     go_reg: function()
     {
         let username = document.getElementById("login").value;
@@ -68,6 +85,7 @@ export default {
         let lastname = document.getElementById("lastname").value;
         let password = document.getElementById("password").value;
         let rep_password = document.getElementById("repeatPassword").value;
+        let role = this.beautify_role(document.getElementById("role_selector").value);
         this.change_pass();
         if(!this.is_correct_data(username, firstname, middlename, lastname, password, rep_password) || this.non_equal)
         {
@@ -81,7 +99,8 @@ export default {
                 password: password, 
                 firstName: firstname,
                 patronymic: middlename,
-                lastName: lastname})
+                lastName: lastname,
+                role: role})
             });
         alert("Заявка на регистрацию отправлена администатору.");
         this.$emit('already-registered');
@@ -184,7 +203,7 @@ export default {
     font-size: 4.5vw;
     color: #333333;
     text-align: center;
-    margin-bottom: 8%;
+    margin-bottom: 5%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -245,7 +264,7 @@ export default {
 
 .wrap-login100 {
     width: 35%;
-    height: 95%;
+    height: 100%;
     background: #fff;
     border-radius: 0.75vw;
     border: solid 0.2vw black;

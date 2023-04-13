@@ -5,8 +5,8 @@
         <div v-if="mode == 'type'" class="button" @click="mode = 'quest'">Командная игра</div>
         <div v-if="mode == 'quiz'" id="menu_header">Викторина</div>
         <div v-if="mode == 'quiz'" class="button" @click="start_quiz">Случайные темы</div>
-        <div v-if="mode == 'quiz'" class="button" @click="pick_themes">Выбрать продукты</div>
-        <div v-if="mode == 'quiz'" class="button" >Соревнование</div>
+        <div v-if="mode == 'quiz'" class="button" @click="pick_themes('train')">Выбрать продукты</div>
+        <div v-if="mode == 'quiz'" class="button" @click="pick_themes('challenge')">Соревнование</div>
         <div v-if="mode == 'quiz'" class="button" @click="show_help">Справка</div>
         <div v-if="mode == 'quiz'" class="button" @click="mode = 'type'">Назад</div>
         <div v-if="mode == 'quest'" id="menu_header">Командная игра</div>
@@ -25,8 +25,8 @@ export default {
     }
   },
   methods:{
-    pick_themes: function () {
-        this.$emit('pick-themes');
+    pick_themes: function (mode) {
+        this.$emit('pick-themes', mode);
     },
     start_quiz: function () {
         this.$emit('start-quiz', []);

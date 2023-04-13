@@ -1,7 +1,7 @@
 <template>
     <GamerHeader @logout="log_out" @change-pass="change_pass = true" />
     <ModeSwitcher v-if="menu == 'menu'" @pick-themes="pick_themes" @show-help="show_help" @start-quiz="start_quiz"  />
-    <ThemesPicker v-if="menu == 'themes'" @switch-mode="switch_mode" @start-quiz="start_quiz" />
+    <ThemesPicker v-if="menu == 'themes'" :mode="mode" @switch-mode="switch_mode" @start-quiz="start_quiz" />
     <div v-if="menu == 'help'" id="help" @click="switch_mode">
       <div>
           Справка
@@ -29,12 +29,14 @@ export default {
   }, 
   data(){
     return {
-      menu: 'menu'
+      menu: 'menu',
+      mode: 'train'
     }
   },
   methods:{
-    pick_themes: function () {
+    pick_themes: function (mode) {
         this.menu = 'themes';
+        this.mode = mode;
     },
     switch_mode: function () {
         this.menu = 'menu';
@@ -42,11 +44,11 @@ export default {
     show_help: function () {
         this.menu = 'help';
     },
-    start_quiz: function (products) {
-        this.$emit('start-quiz', products);
+    start_quiz: function (products, mode) {
+        this.$emit('start-quiz', products, mode);
     },
     log_out: function () {
-        this.$emit('log_out');
+        this.$emit('logout');
     },
   }
 }

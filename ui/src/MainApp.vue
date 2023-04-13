@@ -70,10 +70,11 @@ export default {
       window.location.href = "#/auth/registration";
       this.currentPath = window.location.hash
     },
-    start_quiz(quiz_products) {
+    start_quiz(quiz_products, mode) {
       window.location.href = "#/quiz";
       this.currentPath = window.location.hash;
       this.quiz_products = quiz_products;
+      this.mode = mode;
     },
   },
   computed: {
@@ -90,7 +91,7 @@ export default {
 </script>
 
 <template>
-  <component ref="component" :is="currentView" :game_id="game_id" :quiz_products="quiz_products" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" @login-player="login_player" @start-quiz="start_quiz" />
+  <component ref="component" :is="currentView" :game_id="game_id" :quiz_products="quiz_products" :mode="mode" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" @login-player="login_player" @start-quiz="start_quiz" />
 </template>
 
 <style>

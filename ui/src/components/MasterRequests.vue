@@ -50,7 +50,7 @@
             <div class="scroll_1">
                 
                 <div class="option_requests" v-for="(option, index) in options" :key="index" v-bind:value="option.userId" v-bind:name="option.userId">
-                    <div class="master_name">{{ option.firstName + ' ' + option.patronymic + ' ' + option.lastName }}</div>
+                    <div class="master_name">{{ option.firstName + ' ' + option.patronymic + ' ' + option.lastName + ' (' + beautify_role(option.role) + ')' }}</div>
                     <center><div class="accept" @click="add(index)"><img src="@/assets/accept.png" alt=""></div></center>
                     <center><div class="reject" @click="remove"><img src="@/assets/reject.png" alt=""></div></center>
                 </div>
@@ -75,6 +75,14 @@ export default {
     }
   },
   methods: {
+        beautify_role: function (input_role) {
+            if(input_role == "admin")
+            return "Администратор";
+        else if(input_role == "master")
+            return "Ведущий";
+        else if(input_role == "player")
+            return "Игрок";
+        },
         generatePassword: function () {
             var length = 8,
                 charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
@@ -98,7 +106,7 @@ export default {
             var change_user = this.options[add_index];
             this.$emit('add-master', change_user);
             this.options = this.options.filter((option, index) => index != add_index);
-            fetch(SERVER_PATH + "/user/toActiveMaster/" + String(change_user.userId), {
+            fetch(SERVER_PATH + "/user/toActiveUser/" + String(change_user.userId), {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
                 })
@@ -134,7 +142,7 @@ export default {
         masters_ref.length = 0;
         this.$nextTick(function () {
 
-        fetch(SERVER_PATH + "/user/get/inactiveMasters", {
+        fetch(SERVER_PATH + "/user/get/inactiveUsers", {
                 method: "GET",
                 headers: {'Content-Type': 'application/json'}
                 }).then( res => res.json() ).then( data => data.forEach(function(item) {

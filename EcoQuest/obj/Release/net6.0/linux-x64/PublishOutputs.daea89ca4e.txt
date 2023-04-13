@@ -1,4 +1,0 @@
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Release\net6.0\linux-x64\PubTmp\Out\appsettings.Development.json
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Release\net6.0\linux-x64\PubTmp\Out\appsettings.json
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Release\net6.0\linux-x64\PubTmp\Out\EcoQuest.pdb
-S:\Информация (3)\EcoQuest\Backend\EcoQuest\EcoQuest\obj\Release\net6.0\linux-x64\PubTmp\Out\EcoQuest

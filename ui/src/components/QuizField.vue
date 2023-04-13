@@ -74,7 +74,7 @@ export default {
         answer_send: false
     }
   },
-  props: ['quiz_products'],
+  props: ['quiz_products', 'mode'],
   methods:{
     end_quiz: function () {
         this.$emit('end-quiz');
@@ -88,8 +88,13 @@ export default {
                         elem.style.backgroundColor = 'white';
                         elem.style.visibility = 'visible';
                     });
+                    Array.prototype.forEach.call(document.getElementsByClassName("quiz_button"), function(elem) {
+                        elem.style.backgroundColor = '#C4C4C4';
+                    });
                     this.answer_send = false;
                     this.show_correct_answer = false;
+                    if(document.getElementById("text_answer"))
+                        document.getElementById("text_answer").value = "";
                 }, timeout);
     },
     enter_answer: function (event) {
@@ -184,6 +189,8 @@ export default {
               })
     },
     use_next: function() {
+        if(this.current_question == this.quiz.questions.length - 1)
+            this.end_quiz();
         if(this.quiz.helps.MissAnswer < 1)
             return;
         ++this.current_question;
@@ -214,7 +221,7 @@ export default {
         await fetch(SERVER_PATH + '/quiz/get', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({UserId: JSON.parse(localStorage.getItem('user')).userId, SelectedProduct: this.quiz_products})
+                        body: JSON.stringify({UserId: JSON.parse(localStorage.getItem('user')).userId, SelectedProduct: this.quiz_products, mode: this.mode})
                     }).then(res => res.json()).then(data => this.quiz = data);
         this.quiz.questions = JSON.parse(this.quiz.questions);
         this.quiz.helps = JSON.parse(this.quiz.helps);

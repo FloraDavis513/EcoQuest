@@ -1,13 +1,13 @@
 <template>
     <AdminHeader @logout="log_out" @change-pass="change_pass = true" @reload-question="read_product_list()"/>
-    <NavigationButton @fields-1="to_fields_1" @fields-2="to_fields_2" @masters="to_masters" />
+    <NavigationButton @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @masters="to_masters" />
 
     <ManageMasters v-if="current_view == 'masters'"/>
 
     <FieldList v-if="current_view == 'fields'" @add-field="add_field" @select-product="select_product" :products="products" />
     <AddFields v-if="current_view == 'fields'" @close-add-field="close_add_field" @create-field="create_field" :is_add_product="is_add_product" />
 
-    <ProductMenu v-if="current_view == 'questions'" :current_view="current_view" :round="current_round" :selected_product="selected_product" @fields-1="to_fields_1" @fields-2="to_fields_2" @delete-product="delete_product" @edit-product="edit_product" />
+    <ProductMenu v-if="current_view == 'questions'" :current_view="current_view" :round="current_round" :selected_product="selected_product" @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @delete-product="delete_product" @edit-product="edit_product" />
     <QuestionsList v-if="current_view == 'questions'" @to-masters="to_masters" @add-question="add_question" @edit-question="edit_question" @delete-question="delete_question" @final-delete-product="final_delete_product" @final-edit-product="final_edit_product" @reset-edit="reset_edit" :selected_product="selected_product" :draw="draw" :products="products" :cache_product="cache_product" ref="q_list" @reload-question="read_product_list()" />
 
     <div id="question_preview" v-show="change_pass">
@@ -95,6 +95,11 @@ export default {
         to_fields_2: function () {
             this.current_view = 'fields';
             this.current_round = 2;
+            this.read_product_list();
+        },
+        to_fields_3: function () {
+            this.current_view = 'fields';
+            this.current_round = 3;
             this.read_product_list();
         },
         add_field: function(){

@@ -24,6 +24,7 @@ export default {
         selected_product: new Set()
     }
   },
+  props: ['mode'],
   methods:{
     fill_product_list: function (products) {
         this.products = products;
@@ -42,7 +43,12 @@ export default {
         this.$emit('switch-mode');
     },
     start_quiz: function () {
-        this.$emit('start-quiz', Array.from(this.selected_product));
+        if(this.mode == 'challenge' && this.selected_product.size < 3)
+        {
+            alert("Должно быть выбрано не менее 3 продуктов");
+            return;
+        }
+        this.$emit('start-quiz', Array.from(this.selected_product), this.mode);
     },
   },
   beforeMount: async function () {

@@ -64,6 +64,7 @@ namespace EcoQuest
                 Login = targetUser.Login,
                 Role = targetUser.Role,
                 Status = targetUser.Status,
+                Name = targetUser.LastName + " " + targetUser.FirstName + " " + targetUser.Patronymic,
                 AuthorizationToken = encodedJWT
             });
         }
@@ -1548,7 +1549,7 @@ namespace EcoQuest
                 Patronymic = request.Patronymic,
                 Login = request.Login,
                 Password = PasswordHasher.Encrypt(request.Password),
-                Role = "master",
+                Role = request.Role,
                 Status = "inactive"
             };
 
@@ -1592,26 +1593,25 @@ namespace EcoQuest
 
             return Results.Json(targetUsers.OrderBy(x => x.UserId));
         }
-        public IResult UserGetInactiveMasters(eco_questContext db)
+        public IResult UserGetInactiveUsers(eco_questContext db)
         {
-            Console.WriteLine("==========/user/get/inactiveMasters==========");
+            Console.WriteLine("==========/user/get/inactiveUsers==========");
 
             List<User> targetUsers = (from u in db.Users
-                                      where u.Role == "master" && u.Status == "inactive"
+                                      where u.Status == "inactive"
                                       select u).ToList();
 
             foreach (var user in targetUsers)
             {
                 user.Password = null;
-                user.Role = null;
                 user.Status = null;
             }
 
             return Results.Json(targetUsers.OrderBy(x => x.UserId));
         }
-        public IResult UserToActiveMasterId(eco_questContext db, long id)
+        public IResult UserToActiveUserId(eco_questContext db, long id)
         {
-            Console.WriteLine("==========/user/toActiveMaster/{id:long}==========");
+            Console.WriteLine("==========/user/toActiveUser/{id:long}==========");
 
             User? targetUser = (from u in db.Users
                                 where u.UserId == id
@@ -1619,8 +1619,6 @@ namespace EcoQuest
 
             if (targetUser == null)
                 return Results.NotFound("Запрашиваемый пользователь не найден");
-            if (targetUser.Role != "master")
-                return Results.BadRequest("Запрашиваемый пользователь не является ведущим");
             if (targetUser.Status != "inactive")
                 return Results.BadRequest("Запрашиваемый пользователь не является неактивным");
 
@@ -1630,9 +1628,9 @@ namespace EcoQuest
 
             return Results.Ok();
         }
-        public IResult UserToInactiveMasterId(eco_questContext db, long id)
+        public IResult UserToInactiveUserId(eco_questContext db, long id)
         {
-            Console.WriteLine("==========/user/toInactiveMaster/{id:long}==========");
+            Console.WriteLine("==========/user/toInactiveUser/{id:long}==========");
 
             User? targetUser = (from u in db.Users
                                 where u.UserId == id
@@ -1640,8 +1638,6 @@ namespace EcoQuest
 
             if (targetUser == null)
                 return Results.NotFound("Запрашиваемый пользователь не найден");
-            if (targetUser.Role != "master")
-                return Results.BadRequest("Запрашиваемый пользователь не является ведущим");
             if (targetUser.Status != "active")
                 return Results.BadRequest("Запрашиваемый пользователь не является активным");
 
@@ -1795,6 +1791,12 @@ namespace EcoQuest
 
         public IResult GetQuiz(eco_questContext db, GetQuizDTO quiz)
         {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == quiz.UserId
+                                select q).FirstOrDefault();
+            if (targetQuiz != null)
+                db.Quiz.Remove(targetQuiz);
+            db.SaveChanges();
             var questions = db.Products.Join(db.Questions,
                 p => p.ProductId,
                 q => q.ProductId,
@@ -1808,6 +1810,31 @@ namespace EcoQuest
                     Type = q.Type
                 }).Where(u => quiz.SelectedProduct.Contains(u.ProductId));
             var list = questions.ToList();
+            string question_str = "";
+
+            List<object> result = new List<object>();
+            if (quiz.Mode == "challenge")
+            {
+                Random rand = new Random();
+                HashSet<int> unique_ids = new HashSet<int>();
+                while (unique_ids.Count < 15)
+                    unique_ids.Add(rand.Next(list.Count));
+                foreach (var question_id in unique_ids)
+                    result.Add(list.ElementAt(question_id));
+                question_str = JsonSerializer.Serialize(result, new JsonSerializerOptions()
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                });
+            }
+            if (question_str.Count() == 0)
+                question_str = JsonSerializer.Serialize(questions, new JsonSerializerOptions()
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                });
 
             Quiz newQuiz = new Quiz()
             {
@@ -1816,12 +1843,7 @@ namespace EcoQuest
                 CurrentQuestion = 0,
                 CorrectAnswers = 0,
                 Helps = "{\"Fifty\":3,\"MissAnswer\":3}",
-                Questions = JsonSerializer.Serialize(questions, new JsonSerializerOptions()
-                {
-                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
-                })
+                Questions = question_str
             };
 
             db.Quiz.Add(newQuiz);
@@ -1845,7 +1867,7 @@ namespace EcoQuest
                 return Results.BadRequest("Вопрос не найден");
             QuestionAnswersDTO? questionAnswersDTO = JsonSerializer.Deserialize<QuestionAnswersDTO>(targetQuestion.Answers);
 
-            bool is_correct_answer = questionAnswersDTO.CorrectAnswers.Contains(answer.Answer);
+            bool is_correct_answer = questionAnswersDTO.CorrectAnswers.ElementAt(0).ToLower() == answer.Answer.ToLower();
             targetQuiz.CorrectAnswers += is_correct_answer ? 1 : 0;
 
             db.SaveChanges();

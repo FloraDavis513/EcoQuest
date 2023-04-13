@@ -100,9 +100,9 @@ namespace EcoQuest
             _app.MapPost("/user/create", _service.UserCreate);
             _app.MapDelete("/user/delete/{id:long}", _service.UserDeleteId);
             _app.MapGet("/user/get/activeMasters", _service.UserGetActiveMasters);
-            _app.MapGet("/user/get/inactiveMasters", _service.UserGetInactiveMasters);
-            _app.MapPost("/user/toActiveMaster/{id:long}", _service.UserToActiveMasterId);
-            _app.MapPost("/user/toInactiveMaster/{id:long}", _service.UserToInactiveMasterId);
+            _app.MapGet("/user/get/inactiveUsers", _service.UserGetInactiveUsers);
+            _app.MapPost("/user/toActiveUser/{id:long}", _service.UserToActiveUserId);
+            _app.MapPost("/user/toInactiveUser/{id:long}", _service.UserToInactiveUserId);
             _app.MapPost("/user/update/info", _service.UserUpdateInfo);
             _app.MapPost("/user/update/password", _service.UserUpdatePassword);
             _app.MapPost("/user/update/password/reset", _service.UserUpdatePasswordReset);
