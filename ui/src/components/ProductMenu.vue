@@ -33,8 +33,10 @@ export default {
         back: function () {
             if( this.round == 1 )
                 this.$emit('fields-1');
-            else
+            else if( this.round == 2 )
                 this.$emit('fields-2');
+            else if( this.round == 3 )
+                this.$emit('fields-3');
         },
         edit: function () {
             this.$emit('edit-product');

@@ -1,5 +1,5 @@
 <template>
-    <GamerHeader @logout="log_out" @change-pass="change_pass = true" />
+    <GamerHeader @logout="log_out" @change-pass="change_pass = true" @to-gamer-stat="to_gamer_stat" />
     <ModeSwitcher v-if="menu == 'menu'" @pick-themes="pick_themes" @show-help="show_help" @start-quiz="start_quiz"  />
     <ThemesPicker v-if="menu == 'themes'" :mode="mode" @switch-mode="switch_mode" @start-quiz="start_quiz" />
     <div v-if="menu == 'help'" id="help" @click="switch_mode">
@@ -49,6 +49,9 @@ export default {
     },
     log_out: function () {
         this.$emit('logout');
+    },
+    to_gamer_stat: function () {
+        this.$emit('to-gamer-stat');
     },
   }
 }

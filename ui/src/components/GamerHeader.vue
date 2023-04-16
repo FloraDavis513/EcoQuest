@@ -6,7 +6,7 @@
         <div class="role">{{user_name()}}</div>
         <div class="profile" @click="vis = !vis"><img src="@/assets/profile.png" alt=""></div>
         <div v-if="vis" id="profile_menu">
-            <div id="change_pass">
+            <div id="change_pass" @click="to_gamer_stat">
                 Статистика
             </div>
             <div id="change_pass" @click="change_pass">
@@ -40,6 +40,9 @@ export default {
       },
       user_name: function () {
           return JSON.parse(localStorage.getItem('user')).name;
+      },
+      to_gamer_stat: function () {
+          this.$emit('to-gamer-stat');
       },
   }
 }

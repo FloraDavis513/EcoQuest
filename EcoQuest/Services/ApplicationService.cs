@@ -1756,7 +1756,8 @@ namespace EcoQuest
                     Text = q.Text,
                     Answers = q.Answers,
                     Round = p.Round,
-                    Type = q.Type
+                    Type = q.Type,
+                    Media = q.Media
                 }).Where(q => q.Round == 3);
             var list = questions.ToList();
             Random rand = new Random();
@@ -1807,7 +1808,8 @@ namespace EcoQuest
                     ProductName = p.Name,
                     Text = q.Text,
                     Answers = q.Answers,
-                    Type = q.Type
+                    Type = q.Type,
+                    Media = q.Media
                 }).Where(u => quiz.SelectedProduct.Contains(u.ProductId));
             var list = questions.ToList();
             string question_str = "";
