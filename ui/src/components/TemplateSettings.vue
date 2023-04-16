@@ -228,7 +228,7 @@ export default {
       if(index < 5)
       this.second_round_bar[index] = selector.value != 'Не выбрано';
 
-      this.get_products_by_round().forEach(item => {
+      this.this.template.products.filter((item) => item.round == 2).forEach(item => {
         if(item.name == selector.value)
         {
           if(item.second_round_repeating == null)
@@ -293,7 +293,7 @@ export default {
     },
     generate_config: function () {
       let config = [];
-      this.get_products_by_round().forEach(item => {
+      this.template.products.filter((item) => item.round == 1).forEach(item => {
           for( let i = 0; i < item.numOfRepeating; ++i )
           {
             const regex = /logo\d+.\w+/g;
@@ -368,7 +368,7 @@ export default {
     generate_questions_round_1: function () {
       let result = {};
 
-      this.get_products_by_round().forEach(product => {
+      this.template.products.filter((item) => item.round == 1).forEach(product => {
           let product_with_questions = JSON.parse(JSON.stringify(product));
           product_with_questions.questions = product_with_questions.allQuestions.filter( question => product.activeQuestions.includes(question.questionId) );
           // delete product_with_questions.allQuestions;
