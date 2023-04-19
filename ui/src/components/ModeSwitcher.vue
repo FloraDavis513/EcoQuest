@@ -7,7 +7,7 @@
         <div v-if="mode == 'quiz'" class="button" @click="start_quiz">Случайные темы</div>
         <div v-if="mode == 'quiz'" class="button" @click="pick_themes('train')">Выбрать продукты</div>
         <div v-if="mode == 'quiz'" class="button" @click="pick_themes('challenge')">Соревнование</div>
-        <div v-if="mode == 'quiz'" class="button" @click="show_help">Справка</div>
+        <div v-if="mode == 'quiz'" class="button" @click="show_help">Правила</div>
         <div v-if="mode == 'quiz'" class="button" @click="mode = 'type'">Назад</div>
         <div v-if="mode == 'quest'" id="menu_header">Командная игра</div>
         <input v-if="mode == 'quest'" type="text" class="form-control" id="middlename" placeholder="Введите id игры">

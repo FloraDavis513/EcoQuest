@@ -1550,7 +1550,7 @@ namespace EcoQuest
                 Login = request.Login,
                 Password = PasswordHasher.Encrypt(request.Password),
                 Role = request.Role,
-                Status = "inactive"
+                Status = request.Role == "player" ? "active" : "inactive"
             };
 
             db.Users.Add(newUser);
@@ -1775,7 +1775,7 @@ namespace EcoQuest
                 Duration = 0,
                 CurrentQuestion = 0,
                 CorrectAnswers = 0,
-                Helps = "{\"Fifty\":3,\"MissAnswer\":3}",
+                Helps = "{\"Fifty\":3,\"RightMistake\":3}",
                 Questions = JsonSerializer.Serialize(result, new JsonSerializerOptions()
                 {
                     Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
@@ -1844,7 +1844,7 @@ namespace EcoQuest
                 Duration = 0,
                 CurrentQuestion = 0,
                 CorrectAnswers = 0,
-                Helps = "{\"Fifty\":3,\"MissAnswer\":3}",
+                Helps = "{\"Fifty\":3,\"RightMistake\":3}",
                 Questions = question_str
             };
 
@@ -1902,7 +1902,7 @@ namespace EcoQuest
             }
             else
             {
-                --helps.MissAnswer;
+                --helps.RightMistake;
                 ++targetQuiz.CurrentQuestion;
             }
             var new_helps = JsonSerializer.Serialize(helps);

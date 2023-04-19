@@ -4,10 +4,12 @@
     <ThemesPicker v-if="menu == 'themes'" :mode="mode" @switch-mode="switch_mode" @start-quiz="start_quiz" />
     <div v-if="menu == 'help'" id="help" @click="switch_mode">
       <div>
-          Справка
+          Правила
       </div>
-      <div style="width:80%;margin-top:1vmax;">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+      <div style="width:80%;margin-top:1vmax;white-space:pre-wrap;text-align:left;">
+        <div>В викторине присутствуют два вида подсказок:</div>
+        <div>1) <em>{{"<здесь будет иконка>"}}</em> <strong>50 на 50</strong> - убирает два неверных ответа. Может быть использована только для вопросов с выбором варианта ответа.</div>
+        <div>2) <em>{{"<здесь будет иконка>"}}</em> <strong>Право на ошибку</strong> - позволяет однократно допустить ошибку при вводе/выборе ответа. Доступна для любых типов вопросов.</div>
       </div>
       <div class="button">
         Назад

@@ -3,17 +3,18 @@
         <div id="question_counter" class="margin_field">
             {{"Вопрос " + Number(current_question + 1) + " из " + quiz.questions.length}}
         </div>
-        <div id="time_counter" class="margin_field">
+        <div v-show="false" id="time_counter" class="margin_field">
             {{"Прошедшее время: " + beautify_timer()}}
         </div>
         <div class="helps_group">
+            <div style="margin-right:1vmax;">Подсказки:</div>
             <div v-show="quiz.helps.Fifty" class="helps_group">
-                <img id="fifty" src="@/assets/50.png" class="help_img" @click="use_fifty"/>
-                <div style="margin-left:1vmax;">{{'x ' + quiz.helps.Fifty}}</div>
+                <img id="fifty" title="Убрать два неверных ответа" src="@/assets/50.png" class="help_img" @click="use_fifty"/>
+                <div class="help_counter">{{'&#215; ' + quiz.helps.Fifty}}</div>
             </div>
-            <div v-show="quiz.helps.MissAnswer" class="helps_group">
-                <img src="@/assets/next.png" class="help_img" @click="use_next"/>
-                <div>{{'x ' + quiz.helps.MissAnswer}}</div>
+            <div v-show="quiz.helps.RightMistake" class="helps_group">
+                <img src="@/assets/next.png" title="Право на ошибку" class="help_img" @click="use_right_mistake"/>
+                <div class="help_counter">{{'&#215; ' + quiz.helps.RightMistake}}</div>
             </div>
         </div>
         <div id="question_field" class="margin_field">
@@ -21,7 +22,10 @@
                 {{quiz.questions[current_question].productName}}
             </div>
             <div id="question_body" class="margin_field scroll">
-                {{quiz.questions[current_question].text}}
+                <img v-if="quiz.questions[current_question].type == 'MEDIA' && quiz.questions[current_question].media" :src="get_media()" style="margin-bottom:1vmax;">
+                <div>
+                    {{quiz.questions[current_question].text}}
+                </div>
             </div>
         </div>
         <div v-if="quiz.questions[current_question].type == 'TEXT_WITH_ANSWERS'" id="answer_group">
@@ -42,7 +46,7 @@
                 </div>
             </div>
         </div>
-        <div v-else id="answer_group" class="margin_field">
+            <div v-else-if="quiz.questions[current_question].type == 'TEXT'" id="answer_group" class="margin_field">
             <input id="text_answer" class="answer input_answer" type="text" placeholder="Введите ответ" v-on:keyup.enter="enter_text_answer">
             <div v-show="!answer_send" class="row">
                 <div class="answer quiz_button" @click="clear_answer">
@@ -52,15 +56,47 @@
                     Отправить
                 </div>
             </div>
-            <div v-show="show_correct_answer" id="correct_answer" class="answer input_answer margin_field">
-                
+            <div v-show="show_correct_answer" id="correct_answer" class="answer input_answer margin_field"> 
+
+            </div>
+        </div>
+        <div v-else-if="quiz.questions[current_question].type == 'MEDIA' && quiz.questions[current_question].media" id="answer_group" class="margin_field">
+            <div v-if="quiz.questions[current_question].answers.AllAnswers.length == 1">
+                <input id="text_answer" class="answer input_answer" type="text" placeholder="Введите ответ" v-on:keyup.enter="enter_text_answer">
+                <div v-show="!answer_send" class="row">
+                    <div class="answer quiz_button" @click="clear_answer">
+                        Очистить
+                    </div>
+                    <div class="answer quiz_button" @click="enter_text_answer">
+                        Отправить
+                    </div>
+                </div>
+                <div v-show="show_correct_answer" id="correct_answer" class="answer input_answer margin_field"/>
+            </div>
+            <div v-else>
+                <div class="row">
+                    <div class="answer" @click="enter_answer">
+                        {{quiz.questions[current_question].answers.AllAnswers[0]}}
+                    </div>
+                    <div class="answer" @click="enter_answer">
+                        {{quiz.questions[current_question].answers.AllAnswers[1]}}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="answer" @click="enter_answer">
+                        {{quiz.questions[current_question].answers.AllAnswers[2]}}
+                    </div>
+                    <div class="answer" @click="enter_answer">
+                        {{quiz.questions[current_question].answers.AllAnswers[3]}}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-import {SERVER_PATH} from "@/common_const";
+import {SERVER_PATH, SRC_PATH} from "@/common_const";
 
 export default {
   name: 'QuizField',
@@ -71,7 +107,8 @@ export default {
         quiz: {questions:[]},
         current_question: 0,
         elapsed_seconds: 0,
-        answer_send: false
+        answer_send: false,
+        right_mistake: false
     }
   },
   props: ['quiz_products', 'mode'],
@@ -93,9 +130,24 @@ export default {
                     });
                     this.answer_send = false;
                     this.show_correct_answer = false;
+                    this.right_mistake = false;
                     if(document.getElementById("text_answer"))
                         document.getElementById("text_answer").value = "";
                 }, timeout);
+    },
+    new_try: function () {
+        setTimeout(() => {
+                    Array.prototype.forEach.call(document.getElementsByClassName("answer"), function(elem) {
+                        elem.style.backgroundColor = 'white';
+                        elem.style.visibility = 'visible';
+                    });
+                    Array.prototype.forEach.call(document.getElementsByClassName("quiz_button"), function(elem) {
+                        elem.style.backgroundColor = '#C4C4C4';
+                    });
+                    this.answer_send = false;
+                    this.show_correct_answer = false;
+                    this.right_mistake = false;
+                }, 1000);
     },
     enter_answer: function (event) {
         event.target.style.backgroundColor = 'grey';
@@ -114,6 +166,11 @@ export default {
                 else
                 {
                     event.target.style.backgroundColor = 'red';
+                    if(this.right_mistake)
+                    {
+                        this.right_mistake = false;
+                        return;
+                    }
                     Array.prototype.forEach.call(document.getElementsByClassName("answer"), function(elem) {
                         if(elem.innerText == data.correct_answer)
                             elem.style.backgroundColor = 'lime';
@@ -140,8 +197,14 @@ export default {
                     text_answer.style.backgroundColor = 'lime';
                 else
                 {
-                    this.show_correct_answer = true;
                     text_answer.style.backgroundColor = 'red';
+                    if(this.right_mistake)
+                    {
+                        this.right_mistake = false;
+                        this.new_try();
+                        return;
+                    }
+                    this.show_correct_answer = true;
                     const correct_answer = document.getElementById("correct_answer");
                     correct_answer.style.backgroundColor = 'lime';
                     correct_answer.innerText = data.correct_answer;
@@ -188,19 +251,22 @@ export default {
                                       UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds})
               })
     },
-    use_next: function() {
-        if(this.current_question == this.quiz.questions.length - 1)
-            this.end_quiz();
-        if(this.quiz.helps.MissAnswer < 1)
+    use_right_mistake: function() {
+        if(this.quiz.helps.RightMistake < 1)
             return;
-        ++this.current_question;
-        --this.quiz.helps.MissAnswer;
+        this.right_mistake = true;
+        --this.quiz.helps.RightMistake;
         fetch(SERVER_PATH + '/quiz/help', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({Help: 2, QuestionId: this.quiz.questions[this.current_question].questionId,
                                       UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds})
               })
+    },
+    get_media: function () {
+        const regex = /media\d+.\w+/g;
+        const found = this.quiz.questions[this.current_question].media.match(regex);
+        return SRC_PATH + found + '?' + Date.now();
     },
   },
   beforeCreate: async function() {
@@ -229,6 +295,8 @@ export default {
             question.answers = JSON.parse(question.answers);
         });
     }
+
+    console.log(this.quiz);
   },
   mounted: function() {
     setInterval(this.second_left, 1000);
@@ -333,9 +401,21 @@ input.input_answer{
     align-items: center;
     text-align: center;
     font-size: 1.9vmax;
+    margin-top: 0.5vmax;
 }
 img.help_img{
     width: 5vmax;
     height: 4vmax;
+    border: solid 0.25vmax black;
+    border-radius: 1vmax;
+}
+
+img.help_img:hover{
+    border: solid 0.25vmax red;
+}
+
+.help_counter{
+    margin-left: 0.5vmax;
+    margin-right: 0.5vmax;
 }
 </style>
