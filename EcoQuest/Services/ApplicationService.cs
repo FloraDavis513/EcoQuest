@@ -1,11 +1,14 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Numerics;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -1593,6 +1596,23 @@ namespace EcoQuest
 
             return Results.Json(targetUsers.OrderBy(x => x.UserId));
         }
+        public IResult UserGetActivePlayers(eco_questContext db)
+        {
+            Console.WriteLine("==========/user/get/activePlayers==========");
+
+            List<User> targetUsers = (from u in db.Users
+                                      where u.Role == "player" && u.Status == "active"
+                                      select u).ToList();
+
+            foreach (var user in targetUsers)
+            {
+                user.Password = null;
+                user.Role = null;
+                user.Status = null;
+            }
+
+            return Results.Json(targetUsers.OrderBy(x => x.UserId));
+        }
         public IResult UserGetInactiveUsers(eco_questContext db)
         {
             Console.WriteLine("==========/user/get/inactiveUsers==========");
@@ -1784,6 +1804,15 @@ namespace EcoQuest
                 })
             };
 
+            QuizStatistic newStat = new QuizStatistic()
+            {
+                UserId = id,
+                Date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US")),
+                Mode = "random",
+                UserAnswers = "[]"
+            };
+
+            db.QuizStatistics.Add(newStat);
             db.Quiz.Add(newQuiz);
             db.SaveChanges();
 
@@ -1860,7 +1889,10 @@ namespace EcoQuest
                                 where q.UserId == answer.UserId
                                 select q).FirstOrDefault();
 
-            targetQuiz.Duration = answer.Duration;
+            QuizStatistic? targetStat = (from q in db.QuizStatistics
+                                         where q.UserId == answer.UserId
+                                         orderby q.Id
+                                         select q).LastOrDefault();
 
             Question? targetQuestion = (from q in db.Questions
                                         where q.QuestionId == answer.QuestionId
@@ -1872,7 +1904,36 @@ namespace EcoQuest
             bool is_correct_answer = questionAnswersDTO.CorrectAnswers.ElementAt(0).ToLower() == answer.Answer.ToLower();
             targetQuiz.CorrectAnswers += is_correct_answer ? 1 : 0;
 
-            db.SaveChanges();
+            List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(targetStat.UserAnswers);
+
+            // Вопрос уже был добавлен в статистику.
+            if(targetQuiz.CurrentQuestion == stat_answers.Count() - 1)
+            {
+                stat_answers.Last().ProductId = targetQuestion.ProductId;
+                stat_answers.Last().QuestionId = answer.QuestionId;
+                stat_answers.Last().Duration += answer.Duration - targetQuiz.Duration;
+                stat_answers.Last().IsCorrect = is_correct_answer ? 1 : 0;
+            }
+            else
+            {
+                stat_answers.Add(new QuizStatAnswersDTO()
+                {
+                    QuestionId = answer.QuestionId,
+                    ProductId = targetQuestion.ProductId,
+                    Duration = answer.Duration - targetQuiz.Duration,
+                    IsCorrect = is_correct_answer ? 1 : 0,
+                    UsedHelps = 0
+                });
+            }
+            
+            targetStat.UserAnswers = JsonSerializer.Serialize(stat_answers);
+
+            targetQuiz.Duration = answer.Duration;
+            ++targetQuiz.CurrentQuestion;
+
+            // При праве на ошибку не сохраняем в случае неверного ответа.
+            if(is_correct_answer || !answer.RightMistake)
+                db.SaveChanges();
 
             return Results.Json(new { result = is_correct_answer, 
                                       correct_answer = questionAnswersDTO.CorrectAnswers.ElementAt(0) });
@@ -1884,10 +1945,11 @@ namespace EcoQuest
                                 where q.UserId == id
                                 select q).FirstOrDefault();
             var questions = JsonSerializer.Deserialize<ICollection<QuestionAnswersDTO>>(targetQuiz.Questions);
+
             return Results.Json(new { total_question = questions.Count(), correct_answer = targetQuiz.CorrectAnswers, total_time = targetQuiz.Duration });
         }
 
-        public IResult UseHelp(eco_questContext db, UseHelp help)
+        public IResult UseHelp(eco_questContext db, UseHelpDTO help)
         {
             Quiz? targetQuiz = (from q in db.Quiz
                                 where q.UserId == help.UserId
@@ -1897,20 +1959,121 @@ namespace EcoQuest
             targetQuiz.Duration = help.Duration;
             bool is_fifty = help.Help == 1;
             if (is_fifty)
-            {
                 --helps.Fifty;
-            }
             else
-            {
                 --helps.RightMistake;
-                ++targetQuiz.CurrentQuestion;
-            }
             var new_helps = JsonSerializer.Serialize(helps);
             targetQuiz.Helps = new_helps;
+
+
+            QuizStatistic? targetStat = (from q in db.QuizStatistics
+                                         where q.UserId == help.UserId
+                                         orderby q.Id
+                                         select q).LastOrDefault();
+            List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(targetStat.UserAnswers);
+            stat_answers.Add(new QuizStatAnswersDTO()
+            {
+                UsedHelps = 1
+            });
+
+            targetStat.UserAnswers = JsonSerializer.Serialize(stat_answers);
 
             db.SaveChanges();
 
             return Results.Ok();
+        }
+
+        public IResult GetPlayerStat(eco_questContext db, PlayerStatFilterDTO filter)
+        {
+            List<object> res = new List<object>();
+            List<User> players = (from q in db.Users
+                                  where q.Role == "player"
+                                  select q).ToList();
+            if (filter.UserId != -1)
+                players = players.Where(p => p.UserId == filter.UserId).ToList();
+            foreach (User player in players)
+            {
+                List<QuizStatistic> users_stat = (from q in db.QuizStatistics
+                                                  where q.UserId == player.UserId
+                                                  select q).ToList();
+                if (filter.Mode != "common")
+                    users_stat = users_stat.Where(p => p.Mode == filter.Mode).ToList();
+                if (filter.Interval != "all")
+                {
+                    var current_date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
+                    var end_date = current_date.AddDays(filter.Interval == "week" ? -7 : filter.Interval == "month" ? -30 : -365);
+                    users_stat = users_stat.Where(p =>  DateTime.Parse(p.Date, new CultureInfo("en-US"), DateTimeStyles.None) <= current_date && 
+                                                        DateTime.Parse(p.Date, new CultureInfo("en-US"), DateTimeStyles.None) >= end_date).ToList();
+                }
+
+                long total_correct_answer = 0;
+                long total_use_help = 0;
+                long total_duration = 0;
+                long total_answer = 0;
+                foreach(QuizStatistic stat in users_stat)
+                {
+                    List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(stat.UserAnswers);
+                    foreach(QuizStatAnswersDTO answer in stat_answers)
+                    {
+                        if (filter.ProductId != -1 && answer.ProductId != filter.ProductId)
+                            continue;
+                        ++total_answer;
+                        total_correct_answer += answer.IsCorrect;
+                        total_use_help += answer.UsedHelps;
+                        total_duration += answer.Duration;
+                    }
+                }
+                if (total_answer == 0)
+                    continue;
+                res.Add(new { user_id = player.UserId, name = player.LastName + " " + player.FirstName.ElementAt(0) + "." + player.Patronymic.ElementAt(0) + ".", 
+                              percent_correct = (float)total_correct_answer / total_answer * 100, 
+                              percent_help = (float)total_use_help / total_answer * 100, badges = 0, total_quiz = users_stat.Count(), 
+                              duration = total_duration / total_answer});
+            }
+            return Results.Json(res);
+        }
+
+        public IResult GetChartData(eco_questContext db, PlayerStatFilterDTO filter)
+        {
+            List<ChartDataDTO> res = new List<ChartDataDTO>();
+            List<QuizStatistic> users_stat = (from q in db.QuizStatistics
+                                              where q.UserId == filter.UserId
+                                              select q).ToList();
+            if (filter.Mode != "common")
+                users_stat = users_stat.Where(p => p.Mode == filter.Mode).ToList();
+            if (filter.Interval != "all")
+            {
+                var current_date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
+                var end_date = current_date.AddDays(filter.Interval == "week" ? -7 : filter.Interval == "month" ? -30 : -365);
+                users_stat = users_stat.Where(p => DateTime.Parse(p.Date, new CultureInfo("en-US"), DateTimeStyles.None) <= current_date &&
+                                                   DateTime.Parse(p.Date, new CultureInfo("en-US"), DateTimeStyles.None) >= end_date).ToList();
+            }
+
+            Dictionary<long, ChartDataDTO> stat_product_by_id = new Dictionary<long, ChartDataDTO>();
+            foreach (QuizStatistic stat in users_stat)
+            {
+                List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(stat.UserAnswers);
+                foreach (QuizStatAnswersDTO answer in stat_answers)
+                {
+                    if(!stat_product_by_id.ContainsKey(answer.ProductId))
+                        stat_product_by_id.Add(answer.ProductId, new ChartDataDTO());
+                    ++stat_product_by_id[answer.ProductId].TotalQuiz;
+                    stat_product_by_id[answer.ProductId].PercentCorrect += answer.IsCorrect;
+                    stat_product_by_id[answer.ProductId].PercentHelp += answer.UsedHelps;
+                    stat_product_by_id[answer.ProductId].Duration += answer.Duration;
+                }
+            }
+
+            foreach (KeyValuePair<long, ChartDataDTO> entry in stat_product_by_id)
+            {
+                entry.Value.PercentCorrect = (int)((float)entry.Value.PercentCorrect / entry.Value.TotalQuiz * 100);
+                entry.Value.PercentHelp = (int)((float)entry.Value.PercentHelp / entry.Value.TotalQuiz * 100);
+                entry.Value.Duration = (int)((float)entry.Value.Duration / entry.Value.TotalQuiz);
+                entry.Value.ProductId = entry.Key;
+                res.Add(entry.Value);
+            }
+
+            return Results.Json(res);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace EcoQuest
 {
-    public class UseHelp
+    public class UseHelpDTO
     {
         public long QuestionId { get; set; }
         public long UserId { get; set; }

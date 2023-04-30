@@ -96,10 +96,13 @@ namespace EcoQuest
 
             _app.MapPost("/statistic/create", _service.StatisticCreate);
             _app.MapPost("/statistic/export", _service.StatisticExport);
+            _app.MapPost("/statistic/user", _service.GetPlayerStat);
+            _app.MapPost("/statistic/chart", _service.GetChartData);
 
             _app.MapPost("/user/create", _service.UserCreate);
             _app.MapDelete("/user/delete/{id:long}", _service.UserDeleteId);
             _app.MapGet("/user/get/activeMasters", _service.UserGetActiveMasters);
+            _app.MapGet("/user/get/activePlayers", _service.UserGetActivePlayers);
             _app.MapGet("/user/get/inactiveUsers", _service.UserGetInactiveUsers);
             _app.MapPost("/user/toActiveUser/{id:long}", _service.UserToActiveUserId);
             _app.MapPost("/user/toInactiveUser/{id:long}", _service.UserToInactiveUserId);

@@ -9,8 +9,11 @@
   },
   "dependencies": {
     "@vuepic/vue-datepicker": "^3.6.4",
+    "chart.js": "^4.2.1",
     "core-js": "^3.8.3",
-    "vue": "^3.2.13"
+    "vue": "^3.2.13",
+    "vue-chartjs": "^5.2.0",
+    "vue3-easy-data-table": "^1.5.42"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

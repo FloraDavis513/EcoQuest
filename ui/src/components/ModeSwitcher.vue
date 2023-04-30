@@ -3,6 +3,9 @@
         <div v-if="mode == 'type'" id="menu_header">Меню</div>
         <div v-if="mode == 'type'" class="button" @click="mode = 'quiz'">Викторина</div>
         <div v-if="mode == 'type'" class="button" @click="mode = 'quest'">Командная игра</div>
+        <div v-if="mode == 'type'" class="button" @click="show_stat">Статистика</div>
+        <div v-if="mode == 'type'" class="button" @click="show_rate">Рейтинг</div>
+        <div v-if="mode == 'type'" class="button">Достижения</div>
         <div v-if="mode == 'quiz'" id="menu_header">Викторина</div>
         <div v-if="mode == 'quiz'" class="button" @click="start_quiz">Случайные темы</div>
         <div v-if="mode == 'quiz'" class="button" @click="pick_themes('train')">Выбрать продукты</div>
@@ -33,6 +36,12 @@ export default {
     },
     show_help: function () {
         this.$emit('show-help');
+    },
+    show_stat: function () {
+        this.$emit('show-stat');
+    },
+    show_rate: function () {
+        this.$emit('show-rate');
     },
   }
 }

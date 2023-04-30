@@ -6,6 +6,7 @@
         {
             GameBoards = new HashSet<GameBoard>();
             Games = new HashSet<Game>();
+            QuizStatistics = new HashSet<QuizStatistic>();
         }
 
         public long UserId { get; set; }
@@ -19,6 +20,7 @@
 
         public virtual ICollection<GameBoard> GameBoards { get; set; }
         public virtual ICollection<Game> Games { get; set; }
+        public virtual ICollection<QuizStatistic> QuizStatistics { get; set; }
 
         public virtual Quiz Quiz { get; set; } = null!;
     }

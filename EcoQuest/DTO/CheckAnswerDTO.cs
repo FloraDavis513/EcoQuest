@@ -6,5 +6,6 @@
         public string Answer { get; set; } = null!;
         public long UserId { get; set; }
         public long Duration { get; set; }
+        public bool RightMistake { get; set; }
     }
 }

@@ -8,7 +8,6 @@ import MasterPanel from './MasterPanel.vue'
 import RegistrationForm from './RegistrationForm.vue'
 import GamerMenu from './GamerMenu.vue'
 import TheQuiz  from './TheQuiz.vue'
-import GamerStat from './GamerStat.vue'
 
 const routes = {
   '/': AuthForm,
@@ -22,7 +21,6 @@ const routes = {
   '/auth/registration': RegistrationForm,
   '/gamer': GamerMenu,
   '/quiz': TheQuiz,
-  '/gamer/stat': GamerStat
 }
 
 export default {
@@ -78,10 +76,6 @@ export default {
       this.quiz_products = quiz_products;
       this.mode = mode;
     },
-    to_gamer_stat() {
-      window.location.href = "#/gamer/stat";
-      this.currentPath = window.location.hash
-    },
   },
   computed: {
     currentView() {
@@ -97,7 +91,7 @@ export default {
 </script>
 
 <template>
-  <component ref="component" :is="currentView" :game_id="game_id" :quiz_products="quiz_products" :mode="mode" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @to-gamer-stat="to_gamer_stat" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" @login-player="login_player" @start-quiz="start_quiz" />
+  <component ref="component" :is="currentView" :game_id="game_id" :quiz_products="quiz_products" :mode="mode" @login-admin="login_admin" @login-master="login_master" @to-fields="to_fields" @to-masters="to_masters" @logout="log_out" @create-game="create_game" @start-game="start_game" @already-registered="already_registered" @go-to-reg="go_to_reg" @to-menu="login_player" @login-player="login_player" @start-quiz="start_quiz" />
 </template>
 
 <style>

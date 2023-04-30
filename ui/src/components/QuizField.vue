@@ -156,7 +156,7 @@ export default {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({Answer: event.target.innerText, QuestionId: this.quiz.questions[this.current_question].questionId,
-                                      UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds})
+                                      UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds, RightMistake: this.right_mistake})
               }).then(res => res.json()).then(data => {
                 const end = performance.now();
                 if( end - start < 500 )
@@ -188,7 +188,7 @@ export default {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({Answer: text_answer.value, QuestionId: this.quiz.questions[this.current_question].questionId,
-                                      UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds})
+                                      UserId: JSON.parse(localStorage.getItem('user')).userId, Duration: this.elapsed_seconds, RightMistake: this.right_mistake})
               }).then(res => res.json()).then(data => {
                 const end = performance.now();
                 if( end - start < 500 )

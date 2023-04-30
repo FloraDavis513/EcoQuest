@@ -15,6 +15,7 @@ namespace EcoQuest
         public virtual DbSet<Statistic> Statistics { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<Quiz> Quiz { get; set; } = null!;
+        public virtual DbSet<QuizStatistic> QuizStatistics { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -139,6 +140,18 @@ namespace EcoQuest
                 entity.Property(e => e.Questions).HasColumnType("character varying").HasColumnName("questions");
                 entity.Property(e => e.Helps).HasColumnType("character varying").HasColumnName("helps");
                 entity.HasOne(d => d.User).WithOne(p => p.Quiz).HasForeignKey<Quiz>(d => d.UserId).HasConstraintName("quiz_fkey");
+            });
+
+            modelBuilder.Entity<QuizStatistic>(entity =>
+            {
+                entity.ToTable("quiz_statistics");
+                entity.HasIndex(e => e.Id, "quiz_quiz_id_unique").IsUnique();
+                entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.Date).HasColumnType("character varying").HasColumnName("date");
+                entity.Property(e => e.Mode).HasColumnType("character varying").HasColumnName("mode");
+                entity.Property(e => e.UserAnswers).HasColumnType("json").HasColumnName("user_answers");
+                entity.HasOne(d => d.User).WithMany(p => p.QuizStatistics).HasForeignKey(d => d.UserId).HasConstraintName("quiz_stat_fk");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -27,9 +27,6 @@ export default {
     to_masters: function () {
           this.$emit('to-masters');
       },
-      to_fields_1: function () {
-          this.$emit('to-fields');
-      },
     chose_master: function (master_chosen, selected) {
         this.master_chosen = master_chosen;
         this.selected = selected;
