@@ -55,12 +55,12 @@ namespace EcoQuest
                 Console.WriteLine("==========/templates==========");
                 return Results.Ok();
             });
-            _app.MapGet("/gamer", [Authorize(Roles = "player")] () =>
+            _app.MapGet("/gamer", [Authorize(Roles = "playeractive")] () =>
             {
                 Console.WriteLine("==========/gamer==========");
                 return Results.Ok();
             });
-            _app.MapGet("/quiz", [Authorize(Roles = "player")] () =>
+            _app.MapGet("/quiz", [Authorize(Roles = "playeractive")] () =>
             {
                 Console.WriteLine("==========/quiz==========");
                 return Results.Ok();
