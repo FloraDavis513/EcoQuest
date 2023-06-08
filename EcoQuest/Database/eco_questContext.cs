@@ -16,6 +16,10 @@ namespace EcoQuest
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<Quiz> Quiz { get; set; } = null!;
         public virtual DbSet<QuizStatistic> QuizStatistics { get; set; } = null!;
+        public virtual DbSet<QuestionWeight> QuestionWeights { get; set; } = null!;
+        public virtual DbSet<RelationProduct> RelationsProduct { get; set; } = null!;
+        public virtual DbSet<RelationQuestion> RelationsQuestion { get; set; } = null!;
+        public virtual DbSet<Challenge> Challenges { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -145,13 +149,54 @@ namespace EcoQuest
             modelBuilder.Entity<QuizStatistic>(entity =>
             {
                 entity.ToTable("quiz_statistics");
-                entity.HasIndex(e => e.Id, "quiz_quiz_id_unique").IsUnique();
+                entity.HasIndex(e => e.Id, "quiz_stat_id_unique").IsUnique();
                 entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
                 entity.Property(e => e.UserId).HasColumnName("user_id");
                 entity.Property(e => e.Date).HasColumnType("character varying").HasColumnName("date");
                 entity.Property(e => e.Mode).HasColumnType("character varying").HasColumnName("mode");
                 entity.Property(e => e.UserAnswers).HasColumnType("json").HasColumnName("user_answers");
                 entity.HasOne(d => d.User).WithMany(p => p.QuizStatistics).HasForeignKey(d => d.UserId).HasConstraintName("quiz_stat_fk");
+            });
+
+            modelBuilder.Entity<QuestionWeight>(entity =>
+            {
+                entity.ToTable("questions_weight");
+                entity.HasIndex(e => e.QuestionWeightId, "weights_weight_id_unique").IsUnique();
+                entity.Property(e => e.QuestionWeightId).HasColumnName("weight_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.ProductId).HasColumnName("product_id");
+                entity.Property(e => e.QuestionId).HasColumnName("question_id");
+                entity.Property(e => e.Weight).HasColumnName("weight");
+                entity.HasOne(d => d.User).WithMany(p => p.QuestionWeights).HasForeignKey(d => d.UserId).HasConstraintName("quiz_stat_user_fk");
+                entity.HasOne(d => d.Product).WithMany(p => p.QuestionWeights).HasForeignKey(d => d.ProductId).HasConstraintName("quiz_stat_product_fk");
+                entity.HasOne(d => d.Question).WithMany(p => p.QuestionWeights).HasForeignKey(d => d.QuestionId).HasConstraintName("quiz_stat_question_fk");
+            });
+
+            modelBuilder.Entity<RelationProduct>(entity =>
+            {
+                entity.ToTable("products_relation");
+                entity.Property(e => e.RelationProductId).HasColumnName("relation_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.FirstProduct).HasColumnName("first_product");
+                entity.Property(e => e.SecondProduct).HasColumnName("second_product");
+                entity.HasOne(d => d.Products).WithOne(p => p.RelationsProduct).HasForeignKey<RelationProduct>(d => d.FirstProduct).HasConstraintName("relation_products_fk");
+            });
+
+            modelBuilder.Entity<RelationQuestion>(entity =>
+            {
+                entity.ToTable("questions_relation");
+                entity.Property(e => e.RelationQuestionId).HasColumnName("relation_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.FirstQuestion).HasColumnName("first_question");
+                entity.Property(e => e.SecondQuestion).HasColumnName("second_question");
+                entity.HasOne(d => d.Questions).WithOne(p => p.RelationQuestion).HasForeignKey<RelationQuestion>(d => d.FirstQuestion).HasConstraintName("relation_question_fk");
+            });
+
+            modelBuilder.Entity<Challenge>(entity =>
+            {
+                entity.ToTable("challenge");
+                entity.Property(e => e.ChallengeId).HasColumnName("challenge_id").UseIdentityAlwaysColumn();
+                entity.Property(e => e.Name).HasColumnName("name");
+                entity.Property(e => e.Password).HasColumnName("password");
+                entity.Property(e => e.Questions).HasColumnName("questions");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -20,7 +20,7 @@
           </div>
       </div>
       <FirstRoundField style="top:12%;left:52.5%;transform: scale(0.85);" @new-message="update_message" :logos="[]" :current_template="template" :game_settings="current_game" />
-      <!-- <div class="game_buttons" style="top:64.75%;left:22.5%;" id="save_game_button" @click="reset_game">Сброс</div> -->
+      <div class="game_buttons" style="top:64.75%;left:22.5%;" id="save_game_button" @click="reset_game">Сброс</div>
       <div class="game_buttons" style="top:84.75%;left:22.5%;" id="save_game_button" @click="save_game">Сохранить</div>
       <div class="game_buttons" style="top:84.75%;left:39%;" id="save_game_button" @click="delete_game">Удалить</div>
       <div class="game_buttons" style="top:92%;left:22.5%;" id="shuffle_button" @click="custom_shuffle(current_game.state.field_config)">Перемешать</div>
@@ -47,28 +47,31 @@
 <div v-if="visible==1" class="item_block_scroll">
       <div v-for="(product,index) in get_products_by_round()" :key="index" id="size_themes">
         <div class="themes_themes" :style="product.colour" >
-            <div class="text_themes" >
+            <div v-show="current_round == 1" class="weight" :style="'background-color:' + product.weight"/>
+            <div class="text_themes" :style="current_round == 1 ? 'margin-left:25%;' : 'margin-left:30%;'" >
               {{product.name}}
             </div>
             <button class="button_themes" @click="expand_product(product, $event)"><img class="polygon" src="@/assets/Polygon_1.png"></button>
         </div>
         <div class="quest_themes" v-show="product.visible_question">
-            <div class="last_redaction" style="font-weight: bold;text-decoration: underline;text-align:center;margin-left: 4%;">
+            <div class="weight question_weight" @click="show_question(question.text, question.answer)" :style="'background-color:white;border:white;width:4%;'"/>
+            <div class="last_redaction" style="font-weight:bold;text-decoration:underline;text-align:center;margin-left:4.5%;">
               Изменен
             </div>
-            <div class="name_quest2" style="font-weight: bold;text-decoration:underline;margin-left: 6%;">
+            <div class="name_quest2" style="font-weight: bold;text-decoration:underline;margin-left: 5.5%;">
               Краткое название
             </div>
             <div class="type_quest" style="font-weight: bold;text-decoration: underline;">
               Тип
             </div>
-            <div class="check_quest">
+            <div class="check_quest" :style="'margin-left:4.75%;'">
                 <input :id="'product_check_' + index" class="check_quest_2" type="checkbox" :checked="product.activeQuestions.length != 0" @click="change_all_status(product.productId)">
             </div>
         </div>
         <div v-for="(question,question_index) in product.allQuestions" :key="question_index" class="quest_themes" v-show="product.visible_question" >
+            <div id="question_weight_mark" class="weight question_weight" @click="show_question(question.text, question.answer)" :style="'background-color:' + question.weight"/>
             <div class="last_redaction" @click="show_question(question.text, question.answer)">
-              {{question.lastEditDate}}
+              {{beautify_date(question.lastEditDate)}}
             </div>
             <div class="name_quest2" @click="show_question(question.text, question.answer)">
               {{question.shortText}}
@@ -479,6 +482,11 @@ export default {
             [array[i], array[j]] = [array[j], array[i]];
         }
     },
+    beautify_date: function (date) {
+            let a = parse(date, 'M/d/yyyy hh:mm:ss aa', new Date());
+            const full_date = a.toLocaleString('ru-RU');
+            return full_date.slice(0, 11);
+        },
   },
   mounted: function () {
     this.count_field = this.template.numFields;
@@ -544,7 +552,7 @@ export default {
   width: 30%;
   height: 70%;
   font-size: 2vw;
-  margin-left: 30%;
+  margin-left: 25%;
   margin-top: 1%;
   text-align: center;
 }
@@ -747,7 +755,7 @@ export default {
 .name_quest2{
   float: left;
   height: 90%;
-  width: 30%;
+  width: 27.5%;
   font-size: 1.6vw;
   margin-top: 0.5%;
   margin-left: 5%;
@@ -756,7 +764,7 @@ export default {
 .type_quest{
   float: left;
   height: 90%;
-  width: 30%;
+  width: 27.5%;
   margin-left: 5%;
   font-size: 1.6vw;
   margin-top: 0.5%;
@@ -1104,5 +1112,23 @@ img:hover {
   text-align: center;
   vertical-align: center;
   line-height: 7.5vw;
+}
+
+.weight{
+  width: 3.5%;
+  height: 25%;
+  margin-left: 1%;
+  margin-top: 1.75%;
+  float: left;
+  border: solid 0.15vmax white;
+}
+
+.question_weight{
+  width: 3.5%;
+  height: 35%;
+  margin-left: 1%;
+  margin-top: 1%;
+  float: left;
+  border: solid 0.15vmax black;
 }
 </style>

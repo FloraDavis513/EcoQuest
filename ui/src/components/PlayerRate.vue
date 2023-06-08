@@ -82,7 +82,7 @@ export default {
             { text: "Место", value: "place" },
             { text: "Имя", value: "name", sortable: true },
             { text: "Игр сыграно", value: "total_quiz" },
-            { text: "Бейджи", value: "badges" },
+            // { text: "Бейджи", value: "badges" },
             { text: "Верных ответов, %", value: "percent_correct", sortable: true },
             { text: "Ср. время на ответ, с", value: "duration", sortable: true },
             { text: "Частота использования подсказок, %", value: "percent_help", sortable: true },
@@ -109,6 +109,8 @@ export default {
                 a.total_quiz + a.percent_correct + (100 - a.percent_help) + a.badges > b.total_quiz + b.percent_correct + (100 - b.percent_help) + b.badges;
             });
             this.items.forEach((item, index) =>{
+                item.percent_correct = item.percent_correct.toFixed(2);
+                item.percent_help = item.percent_help.toFixed(2);
                 item.place = index + 1;
                 if(JSON.parse(localStorage.getItem('user')).userId == item.user_id)
                     this.user_place = index + 1;
@@ -132,6 +134,8 @@ export default {
                 a.total_quiz + a.percent_correct + (100 - a.percent_help) + a.badges > b.total_quiz + b.percent_correct + (100 - b.percent_help) + b.badges;
             });
             this.items.forEach((item, index) =>{
+                item.percent_correct = item.percent_correct.toFixed(2);
+                item.percent_help = item.percent_help.toFixed(2);
                 item.place = index + 1;
                 if(JSON.parse(localStorage.getItem('user')).userId == item.user_id)
                     this.user_place = index + 1;
@@ -180,6 +184,13 @@ export default {
     text-align: center;
 }
 
+@media screen and (max-width: 800px) {
+  #stat_header {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
 #filters{
     width: 70%;
     display: flex;
@@ -187,6 +198,12 @@ export default {
     justify-content: space-evenly;
     align-items: right;
     text-align: center;
+}
+
+@media screen and (max-width: 800px) {
+  #filters {
+    flex-direction: column;
+  }
 }
 
 .filter{

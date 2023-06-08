@@ -1,7 +1,10 @@
 ﻿using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Office2016.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Vml.Office;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
@@ -16,6 +19,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
+using static EcoQuest.StatisticsResultsDTO;
 
 namespace EcoQuest
 {
@@ -1763,7 +1767,9 @@ namespace EcoQuest
             Quiz? targetQuiz = (from q in db.Quiz
                                 where q.UserId == id
                                 select q).FirstOrDefault();
-            if(targetQuiz != null)
+            List<QuestionWeight> weights = (from q in db.QuestionWeights
+                                            select q).ToList();
+            if (targetQuiz != null)
                 db.Quiz.Remove(targetQuiz);
             db.SaveChanges();
             var questions = db.Products.Join(db.Questions,
@@ -1783,7 +1789,20 @@ namespace EcoQuest
             Random rand = new Random();
             HashSet<int> unique_ids = new HashSet<int>();
             while (unique_ids.Count < 15)
-                unique_ids.Add(rand.Next(list.Count));
+            {
+                int first = rand.Next(list.Count);
+                int second = rand.Next(list.Count);
+                QuestionWeight? first_weight = (from q in weights
+                                                where q.QuestionId == first
+                                                select q).FirstOrDefault();
+                QuestionWeight? second_weight = (from q in weights
+                                                 where q.QuestionId == second
+                                                 select q).FirstOrDefault();
+                if (first_weight != null && second_weight != null)
+                    unique_ids.Add(first_weight.Weight > second_weight.Weight ? first : second);
+                else
+                    unique_ids.Add(first);
+            }
 
             List<object> result = new List<object>();
             foreach (var question_id in unique_ids)
@@ -1877,7 +1896,80 @@ namespace EcoQuest
                 Questions = question_str
             };
 
+            QuizStatistic newStat = new QuizStatistic()
+            {
+                UserId = quiz.UserId,
+                Date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US")),
+                Mode = quiz.Mode,
+                UserAnswers = "[]"
+            };
+
             db.Quiz.Add(newQuiz);
+            db.QuizStatistics.Add(newStat);
+            db.SaveChanges();
+
+            return Results.Json(newQuiz);
+        }
+
+        public IResult GetChallengeQuiz(eco_questContext db, GetQuizDTO quiz)
+        {
+            Quiz? targetQuiz = (from q in db.Quiz
+                                where q.UserId == quiz.UserId
+                                select q).FirstOrDefault();
+            if (targetQuiz != null)
+                db.Quiz.Remove(targetQuiz);
+            db.SaveChanges();
+
+            Challenge? target_challenge = (from q in db.Challenges
+                                          where q.Password == quiz.Password
+                                          select q).FirstOrDefault();
+            if(target_challenge == null)
+                return Results.BadRequest("Такого соревнования не существует");
+
+            var selected_questions = target_challenge.Questions.Split(',')?.Select(Int64.Parse)?.ToList();
+
+            var questions = db.Products.Join(db.Questions,
+                p => p.ProductId,
+                q => q.ProductId,
+                (p, q) => new
+                {
+                    QuestionId = q.QuestionId,
+                    ProductId = q.ProductId,
+                    ProductName = p.Name,
+                    Text = q.Text,
+                    Answers = q.Answers,
+                    Type = q.Type,
+                    Media = q.Media
+                }).Where(u => selected_questions.Contains(u.QuestionId));
+            var list = questions.ToList();
+            string question_str = "";
+            question_str = JsonSerializer.Serialize(questions, new JsonSerializerOptions()
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                ReferenceHandler = ReferenceHandler.IgnoreCycles,
+            });
+
+            Quiz newQuiz = new Quiz()
+            {
+                UserId = quiz.UserId,
+                Duration = 0,
+                CurrentQuestion = 0,
+                CorrectAnswers = 0,
+                Helps = "{\"Fifty\":3,\"RightMistake\":3}",
+                Questions = question_str
+            };
+
+            QuizStatistic newStat = new QuizStatistic()
+            {
+                UserId = quiz.UserId,
+                Date = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US")),
+                Mode = quiz.Mode,
+                UserAnswers = "[]"
+            };
+
+            db.Quiz.Add(newQuiz);
+            db.QuizStatistics.Add(newStat);
             db.SaveChanges();
 
             return Results.Json(newQuiz);
@@ -1907,12 +1999,14 @@ namespace EcoQuest
             List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(targetStat.UserAnswers);
 
             // Вопрос уже был добавлен в статистику.
+            bool help_used = false;
             if(targetQuiz.CurrentQuestion == stat_answers.Count() - 1)
             {
                 stat_answers.Last().ProductId = targetQuestion.ProductId;
                 stat_answers.Last().QuestionId = answer.QuestionId;
                 stat_answers.Last().Duration += answer.Duration - targetQuiz.Duration;
                 stat_answers.Last().IsCorrect = is_correct_answer ? 1 : 0;
+                help_used = true;
             }
             else
             {
@@ -1933,7 +2027,17 @@ namespace EcoQuest
 
             // При праве на ошибку не сохраняем в случае неверного ответа.
             if(is_correct_answer || !answer.RightMistake)
+            {
                 db.SaveChanges();
+                long weight = 0;
+                weight += is_correct_answer ? 0 : 100;
+                weight += help_used ? 20 : 0;
+                weight += answer.Duration < 15 ? 0 : 10;
+                QuestionWeightUpdate(db, new WeightFilterDTO { ProductId = targetQuestion.ProductId,
+                                                               QuestionId = answer.QuestionId,
+                                                               Weight = Math.Min(weight, 100)
+                });
+            }
 
             return Results.Json(new { result = is_correct_answer, 
                                       correct_answer = questionAnswersDTO.CorrectAnswers.ElementAt(0) });
@@ -2039,6 +2143,14 @@ namespace EcoQuest
             List<QuizStatistic> users_stat = (from q in db.QuizStatistics
                                               where q.UserId == filter.UserId
                                               select q).ToList();
+            var query = from q in db.Questions
+                        group q by q.ProductId into qGroup
+                        select new
+                        {
+                            ProductId = qGroup.Key,
+                            Count = qGroup.Count(),
+                        };
+            var questions_by_product_id = query.ToDictionary(x => x.ProductId, x => x.Count);
             if (filter.Mode != "common")
                 users_stat = users_stat.Where(p => p.Mode == filter.Mode).ToList();
             if (filter.Interval != "all")
@@ -2050,17 +2162,22 @@ namespace EcoQuest
             }
 
             Dictionary<long, ChartDataDTO> stat_product_by_id = new Dictionary<long, ChartDataDTO>();
+            Dictionary<long, HashSet<long>> unique_answer_by_product_id = new Dictionary<long, HashSet<long>>();
             foreach (QuizStatistic stat in users_stat)
             {
                 List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(stat.UserAnswers);
                 foreach (QuizStatAnswersDTO answer in stat_answers)
                 {
                     if(!stat_product_by_id.ContainsKey(answer.ProductId))
+                    {
                         stat_product_by_id.Add(answer.ProductId, new ChartDataDTO());
+                        unique_answer_by_product_id.Add(answer.ProductId, new HashSet<long>());
+                    }
                     ++stat_product_by_id[answer.ProductId].TotalQuiz;
                     stat_product_by_id[answer.ProductId].PercentCorrect += answer.IsCorrect;
                     stat_product_by_id[answer.ProductId].PercentHelp += answer.UsedHelps;
                     stat_product_by_id[answer.ProductId].Duration += answer.Duration;
+                    unique_answer_by_product_id[answer.ProductId].Add(answer.QuestionId);
                 }
             }
 
@@ -2070,10 +2187,362 @@ namespace EcoQuest
                 entry.Value.PercentHelp = (int)((float)entry.Value.PercentHelp / entry.Value.TotalQuiz * 100);
                 entry.Value.Duration = (int)((float)entry.Value.Duration / entry.Value.TotalQuiz);
                 entry.Value.ProductId = entry.Key;
+                entry.Value.UniqueAnswers = (int)((float)unique_answer_by_product_id[entry.Key].Count / questions_by_product_id[entry.Key] * 100);
                 res.Add(entry.Value);
             }
 
             return Results.Json(res);
+        }
+
+        public async void QuestionWeightUpdate(eco_questContext db, WeightFilterDTO filter)
+        {
+            QuestionWeight? weight = (from q in db.QuestionWeights
+                                      where (filter.QuestionId == null || q.QuestionId == filter.QuestionId) &&
+                                            (filter.ProductId == null || q.ProductId == filter.ProductId)
+                                      select q).FirstOrDefault();
+            if(weight == null)
+            {
+                db.QuestionWeights.Add(new QuestionWeight()
+                {
+                    ProductId = (long)filter.ProductId,
+                    QuestionId = (long)filter.QuestionId,
+                    Weight = (long)filter.Weight
+                });
+            }
+            else
+                weight.Weight = (weight.Weight + (long)filter.Weight) / 2;
+
+            db.SaveChanges();
+        }
+
+        public IResult GetQuestionWeight(eco_questContext db, WeightFilterDTO filter)
+        {
+            if (filter.QuestionId == null && filter.ProductId == null)
+                return Results.BadRequest("Невозможно найти вес вопроса по заданному фильтру");
+            long weight = 0;
+            if (filter.QuestionId != null)
+            {
+                QuestionWeight? weight_obj = (from q in db.QuestionWeights
+                                              where q.QuestionId == filter.QuestionId
+                                              select q).FirstOrDefault();
+                if(weight_obj != null)
+                    weight = weight_obj.Weight;
+                else
+                {
+                    RelationQuestion? relation = (from q in db.RelationsQuestion
+                                                 where q.FirstQuestion == filter.QuestionId
+                                                 select q).FirstOrDefault();
+                    if (relation != null)
+                    {
+                        weight_obj = (from q in db.QuestionWeights
+                                   where q.QuestionId == relation.SecondQuestion
+                                   select q).FirstOrDefault();
+                        if (weight_obj != null)
+                            weight = weight_obj.Weight;
+                    }
+                }
+            }
+            else if(filter.ProductId != null)
+            {
+                List<QuestionWeight> weights = (from q in db.QuestionWeights
+                                                where q.ProductId == filter.ProductId
+                                                select q).ToList();
+                if(weights.Count > 0)
+                {
+                    foreach (QuestionWeight weight_obj in weights)
+                        weight += weight_obj.Weight;
+                    weight /= weights.Count;
+                }
+                else
+                {
+                    RelationProduct? relation = (from q in db.RelationsProduct
+                                                 where q.FirstProduct == filter.ProductId
+                                                 select q).FirstOrDefault();
+                    if(relation != null)
+                    {
+                        weights = (from q in db.QuestionWeights
+                                   where q.ProductId == relation.SecondProduct
+                                   select q).ToList();
+                        if (weights.Count > 0)
+                        {
+                            foreach (QuestionWeight weight_obj in weights)
+                                weight += weight_obj.Weight;
+                            weight /= weights.Count;
+                        }
+                    }
+                }
+            }
+            return Results.Json(weight);
+        }
+
+        public IResult GetQuestionWeightToPlayer(eco_questContext db, long id)
+        {
+            List<object> res = new List<object>();
+            List<QuizStatistic> statistic_records = (from q in db.QuizStatistics
+                                                     where q.UserId == id
+                                                     select q).ToList();
+            Dictionary<long, long> weights_by_id = new Dictionary<long, long>();
+            Dictionary<long, long> answers_by_id = new Dictionary<long, long>();
+            foreach (QuizStatistic stat in statistic_records)
+            {
+                List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(stat.UserAnswers);
+                foreach (QuizStatAnswersDTO answer in stat_answers)
+                {
+                    if (!weights_by_id.ContainsKey(answer.ProductId))
+                    {
+                        weights_by_id.Add(answer.ProductId, Math.Min(100 * (1 - answer.IsCorrect) + 20 * answer.UsedHelps + 10 * (answer.Duration > 15 ? 1 : 0), 100));
+                        answers_by_id.Add(answer.ProductId, 1);
+                        continue;
+                    }
+                    weights_by_id[answer.ProductId] += Math.Min(100 * (1 - answer.IsCorrect) + 20 * answer.UsedHelps + 10 * (answer.Duration > 15 ? 1 : 0), 100);
+                    ++answers_by_id[answer.ProductId];
+                }
+            }
+            foreach (KeyValuePair<long, long> entry in weights_by_id)
+            {
+                res.Add(
+                        new {
+                            ProductId = entry.Key,
+                            Weight = entry.Value / answers_by_id[entry.Key]
+                        });
+            }
+            return Results.Json(res);
+        }
+
+        public IResult GetQuestionWeightAll(eco_questContext db)
+        {
+            List<object> result = new List<object>();
+            List<Question> questions = (from q in db.Questions
+                                       select q).ToList();
+            foreach(Question question in questions)
+            {
+                long weight = 0;
+                QuestionWeight? weight_obj = (from q in db.QuestionWeights
+                                              where q.QuestionId == question.QuestionId
+                                              select q).FirstOrDefault();
+                if (weight_obj != null)
+                    weight = weight_obj.Weight;
+                else
+                {
+                    RelationQuestion? relation = (from q in db.RelationsQuestion
+                                                  where q.FirstQuestion == question.QuestionId
+                                                  select q).FirstOrDefault();
+                    if (relation != null)
+                    {
+                        weight_obj = (from q in db.QuestionWeights
+                                      where q.QuestionId == relation.SecondQuestion
+                                      select q).FirstOrDefault();
+                        if (weight_obj != null)
+                            weight = weight_obj.Weight;
+                    }
+                }
+                result.Add(new {QuestionId = question.QuestionId, Weight = weight });
+            }
+            return Results.Json(result);
+        }
+
+        public IResult UpdateRelation(eco_questContext db, UpdateRelationDTO filter)
+        {
+            RelationProduct? relation = (from q in db.RelationsProduct
+                                         where q.SecondProduct == filter.SecondProduct
+                                         select q).FirstOrDefault();
+            if(filter.FirstProduct == null && relation == null)
+                return Results.Ok();
+
+            if (relation != null)
+            {
+                db.Remove(relation);
+                if(filter.FirstProduct != null)
+                {
+                    db.Add(new RelationProduct()
+                    {
+                        FirstProduct = (long)filter.FirstProduct,
+                        SecondProduct = filter.SecondProduct
+                    });
+                }
+            }
+            else
+                db.Add(new RelationProduct()
+                {
+                    FirstProduct = (long)filter.FirstProduct,
+                    SecondProduct = filter.SecondProduct
+                });
+            db.SaveChanges();
+            return Results.Ok();
+        }
+
+        public IResult GetRelation(eco_questContext db, long id)
+        {
+            RelationProduct? relation = (from q in db.RelationsProduct
+                                         where q.SecondProduct == id
+                                         select q).FirstOrDefault();
+            if(relation == null)
+                return Results.Json(new { Id = -1, Name = "Не выбрано" });
+            Product? product = (from q in db.Products
+                                where q.ProductId == relation.FirstProduct
+                                select q).FirstOrDefault();
+            return Results.Json(new { Id = relation.FirstProduct, Name = product.Name});
+        }
+
+        public IResult GetQuestionRelation(eco_questContext db, long id)
+        {
+            RelationQuestion? relation = (from q in db.RelationsQuestion
+                                         where q.SecondQuestion == id
+                                         select q).FirstOrDefault();
+            if (relation == null)
+                return Results.Json(new { Id = -1, ShortText = "Не выбрано" });
+            Question? question = (from q in db.Questions
+                                  where q.QuestionId == relation.FirstQuestion
+                                  select q).FirstOrDefault();
+            return Results.Json(new { Id = relation.FirstQuestion, ShortText = question.ShortText });
+        }
+
+        public IResult StatisticPlayersExport(eco_questContext db, QuizStatisticExportDTO request)
+        {
+            List<QuizStatistic> statistic_records = (from q in db.QuizStatistics
+                                                     orderby q.Id
+                                                     select q).ToList();
+            List<User> players = (from q in db.Users
+                                  where q.Role == "player"
+                                  select q).ToList();
+            var question_query = from q in db.Questions
+                        select new
+                        {
+                            QuestionId = q.QuestionId,
+                            Text = q.Text,
+                        };
+            var question_by_id = question_query.ToDictionary(x => x.QuestionId, x => x.Text);
+            var product_query = from q in db.Products
+                        select new
+                        {
+                            ProductId = q.ProductId,
+                            Name = q.Name,
+                        };
+            var product_name_by_id = product_query.ToDictionary(x => x.ProductId, x => x.Name);
+            XLWorkbook workbook = new XLWorkbook();
+            IXLWorksheet worksheet = workbook.Worksheets.Add("QuizStatistics");
+
+            Dictionary<string, string> mode_dict = new Dictionary<string, string>();
+            mode_dict.Add("train", "Тренировочный режим");
+            mode_dict.Add("random", "Случайный режим");
+            mode_dict.Add("challenge", "Соревновательный режим");
+
+            int row = 1;
+            worksheet.Cell("B" + row).Value = "Дата проведения викторины";
+            worksheet.Cell("C" + row).Value = "ФИО игрока";
+            worksheet.Cell("D" + row).Value = "Режим";
+            worksheet.Cell("E" + row).Value = "Продукт";
+            worksheet.Cell("F" + row).Value = "Вопрос";
+            worksheet.Cell("G" + row).Value = "Верный ответ";
+            worksheet.Cell("H" + row).Value = "Использована подсказка";
+
+            foreach (var record in statistic_records)
+            {
+                int start_row = row;
+                User? player = (from q in players
+                                where q.UserId == record.UserId
+                                select q).FirstOrDefault();
+                List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(record.UserAnswers);
+                foreach (QuizStatAnswersDTO answer in stat_answers)
+                {
+                    row++;
+                    worksheet.Cell("A" + row).Value = record.Id.ToString();
+                    worksheet.Cell("B" + row).Value = record.Date;
+                    if (player != null)
+                        worksheet.Cell("C" + row).Value = $"{player.LastName} {player.FirstName} {player.Patronymic}";
+                    worksheet.Cell("D" + row).Value = mode_dict[record.Mode];
+                    worksheet.Cell("E" + row).Value = product_name_by_id[answer.ProductId];
+                    worksheet.Cell("F" + row).Value = question_by_id[answer.QuestionId];
+                    worksheet.Cell("G" + row).Value = answer.IsCorrect == 1 ? "Да" : "Нет";
+                    worksheet.Cell("H" + row).Value = answer.UsedHelps == 1 ? "Да" : "Нет";
+                }
+            }
+            worksheet.Columns().AdjustToContents();
+            worksheet.Range($"A1:H{row}").Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Range($"A1:H{row}").Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Range($"A1:H{row}").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Range($"A1:H{row}").Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+            List<string> oldFiles = (from file in Directory.GetFiles(_app.Configuration["SourcePath"])
+                                     where Regex.IsMatch(Path.GetFileName(file), @"^quiz_statistics.*\.xlsx$")
+                                     select file).ToList();
+
+            foreach (var oldFile in oldFiles)
+            {
+                File.Delete(oldFile);
+            }
+
+            string filePath = $"{_app.Configuration["SourcePath"]}{request.FileName}.xlsx";
+
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                workbook.SaveAs(fileStream);
+            }
+            return Results.Ok();
+        }
+
+        public IResult GetAllChallenge(eco_questContext db)
+        {
+            List<Challenge> challenges = (from q in db.Challenges
+                                          orderby q.ChallengeId
+                                          select q).ToList();
+            foreach (var challenge in challenges)
+                challenge.Questions = null;
+            return Results.Json(challenges);
+        }
+
+        public IResult GetChallengeById(eco_questContext db, long id)
+        {
+            Challenge? challenge = (from q in db.Challenges
+                                   where q.ChallengeId == id
+                                   select q).FirstOrDefault();
+            return Results.Json(challenge);
+        }
+
+        public IResult DeleteChallengeById(eco_questContext db, long id)
+        {
+            Challenge? challenge = (from q in db.Challenges
+                                    where q.ChallengeId == id
+                                    select q).FirstOrDefault();
+            if (challenge != null)
+                db.Challenges.Remove(challenge);
+            db.SaveChanges();
+            return Results.Ok();
+        }
+
+        public IResult UpdateChallenge(eco_questContext db, Challenge input_challenge)
+        {
+            Challenge? challenge = (from q in db.Challenges
+                                    where q.ChallengeId == input_challenge.ChallengeId
+                                    select q).FirstOrDefault();
+            if (challenge != null)
+            {
+                challenge.Name = input_challenge.Name;
+                challenge.Password = input_challenge.Password;
+                challenge.Questions = input_challenge.Questions;
+            }
+            else
+            {
+                db.Challenges.Add(new Challenge
+                {
+                    Name = input_challenge.Name,
+                    Password = input_challenge.Password,
+                    Questions = input_challenge.Questions,
+                });
+            }
+            db.SaveChanges();
+            return Results.Ok();
+        }
+
+        public IResult CheckChallengeExist(eco_questContext db, Challenge input_challenge)
+        {
+            Challenge? challenge = (from q in db.Challenges
+                                    where q.Password == input_challenge.Password
+                                    select q).FirstOrDefault();
+            if(challenge != null)
+                return Results.Ok();
+            else
+                return Results.BadRequest("Соревнование с таким паролем отсутствует!");
         }
     }
 }

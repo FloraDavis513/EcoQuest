@@ -3,7 +3,7 @@
         <div class="logo">
             <div class="green_part">Э</div><div class="black_part">ко</div><div class="green_part">К</div><div class="black_part">вест</div>
         </div>
-        <div class="role">Ведущий</div>
+        <div class="role">{{user_name() + " (ведущий)"}}</div>
         <div class="profile" @click="vis = !vis"><img src="@/assets/profile.png" alt=""></div>
         <div v-if="vis" id="profile_menu">
             <div id="change_pass" @click="change_pass">
@@ -34,6 +34,10 @@ export default {
       },
       pop_up_profile_menu: function () {
           this.vis = !this.vis;
+      },
+      user_name: function () {
+            return "";
+          // return JSON.parse(localStorage.getItem('user')).name;
       },
   }
 }

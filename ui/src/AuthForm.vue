@@ -27,7 +27,7 @@
         </div>
         <div id="registration">
             <div id="reg_text">
-            У вас ещё нет аккаунта?
+            Ещё нет аккаунта?
             </div>
             <div id="go_to_reg" @click="go_to_reg">
             Зарегистрируйтесь
@@ -165,7 +165,7 @@ export default {
 
 .AuthHeader{
     color: #f9fff9;
-    font-size: 2.5vw;
+    font-size: 2.5vmax;
     margin-top: 3%;
     text-align: center;
 }
@@ -180,7 +180,7 @@ export default {
 }
 
 .AuthLogo{
-    font-size: 5.5vw;
+    font-size: 5.5vmax;
     margin-top: 2.5%;
     text-align: center;
     width: 100%;
@@ -198,6 +198,14 @@ export default {
     margin-top: 3%;
     border: solid 0.15vw;
     margin-left: 33.3%;
+}
+
+@media screen and (max-width: 800px) {
+  .group_auth {
+    width: 90%;
+    height: 50%;
+    margin-left: 5%;
+  }
 }
 
 #login_master{
@@ -222,7 +230,7 @@ export default {
     float: left;
     text-align: center;
     color: #f9fff9;
-    font-size: 1.75vw;
+    font-size: 1.75vmax;
     margin-left: -1%;
 }
 
@@ -240,23 +248,22 @@ export default {
     border-radius: 1.5vw;
     margin-left: 10%;
     margin-top: 5%;
-    font-size: 120%;
-    font-size: 1.3vw;
+    font-size: 1.3vmax;
     border: solid 0.15vw;
     text-indent: 5%;
 }
 
 #enter{
+    padding-top: 2.5%;
+    padding-bottom: 2.5%;
     margin-left: 25%;
     width: 50%;
-    height: 25%;
     border: solid black 2px;
     background: #007A10;
     color: #f9fff9;
-    font-size: 1.75vw;
+    font-size: 1.75vmax;
     text-align: center;
     border-radius: 15px;
-    line-height: 2.75vw;
     margin-top: 4%;
 }
 #enter:hover {
@@ -266,7 +273,7 @@ export default {
 #get_pass{
     text-align: center;
     margin-top: 4%;
-    font-size: 1.2vw;
+    font-size: 1.2vmax;
     color: #f9fff9;
 }
 
@@ -276,7 +283,7 @@ export default {
     text-align: center;
     height: 5%;
     margin-top: 2%;
-    font-size: 1.2vw;
+    font-size: 1.2vmax;
 }
 
 #reg_text{
@@ -293,7 +300,7 @@ export default {
 #user_message{
     text-align: center;
     margin-top: 4%;
-    font-size: 1.2vw;
+    font-size: 1.2vmax;
     color: #f9fff9;
 }
 

@@ -160,18 +160,7 @@ export default {
     if(this.logos.length > 0)
         document.getElementById('greeting_message').style = 'resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;outline:none;';
   },
-  updated: function() {
-    // this.$emit('update-field');
-  }
 }
-
-// document.addEventListener("DOMNodeInserted", function () {
-//     if(document.getElementById('field_product_1'))
-//     {
-//         console.log('inserted');
-//         this.$emit('update-field');
-//     }
-// }, false);
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

@@ -11,12 +11,12 @@
             </div>
             <div class="metrics">
                 <div>Ср. % верных ответов:</div>
-                <div>{{base_metrics.percent_correct + '%'}}</div>
+                <div>{{base_metrics.percent_correct.toFixed(2) + '%'}}</div>
             </div>
-            <div class="metrics">
+            <!-- <div class="metrics">
                 <div>Бейджей получено:</div>
                 <div>{{base_metrics.badges}}</div>
-            </div>
+            </div> -->
         </div>
         <div id="stat_group">
             <div id="filters">
@@ -35,8 +35,9 @@
                 <select class="filter" id="metric" @input="change_metric_filter">
                     <option>Процент верных ответов</option>
                     <option>Использование подсказок</option>
+                    <option>Среднее время на ответ</option>
                     <option>Вопросов отвечено</option>
-                    <!-- <option>Уникальных вопросов отвечено</option> -->
+                    <option>Уникальных вопросов отвечено</option>
                 </select>
                 <select multiple class="filter" id="product" v-model="selectedItems" @change="change_product_filter" >
                     <option v-for="(product, index) in products" :key="index">{{product.name}}</option>
@@ -61,8 +62,11 @@ import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
 import { SERVER_PATH } from '../common_const.js'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
-ChartJS.defaults.font.size = 28;
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+if(window.innerWidth < 800)
+    ChartJS.defaults.font.size = 14;
+else
+    ChartJS.defaults.font.size = 28;
 ChartJS.defaults.color = '#000';
 
 export default {
@@ -160,7 +164,19 @@ export default {
                 this.chartData.datasets[0].data.push(product.totalQuiz);
                 this.values_map.set(product.productId, product.totalQuiz);
                 this.chartOptions.plugins.title.text = "Вопросов отвечено";
-            }   
+            }
+            else if(current_metric == "Среднее время на ответ")
+            {
+                this.chartData.datasets[0].data.push(product.duration);
+                this.values_map.set(product.productId, product.duration);
+                this.chartOptions.plugins.title.text = "Среднее время на ответ";
+            }
+            else if(current_metric == "Уникальных вопросов отвечено")
+            {
+                this.chartData.datasets[0].data.push(product.uniqueAnswers);
+                this.values_map.set(product.productId, product.uniqueAnswers);
+                this.chartOptions.plugins.title.text = "Уникальных вопросов отвечено";
+            }
             });
 
         this.products.forEach(product => {
@@ -207,7 +223,7 @@ export default {
             data.forEach(product => this.chartData.labels.push(product.name));
             this.fill_product_map(data);
             this.show_producs = data;
-            if(data.length > 5)
+            if(data.length > 5 || window.innerWidth < 800)
                 this.chartOptions.indexAxis = 'y'
             } );
 
@@ -268,6 +284,12 @@ export default {
     text-align: center;
 }
 
+@media screen and (max-width: 800px) {
+  #common_metrics {
+    flex-direction: column;
+  }
+}
+
 #stat_group{
     width: 100%;
     margin-top: 3vmax;
@@ -277,6 +299,13 @@ export default {
     align-items: center;
     text-align: center;
 }
+
+@media screen and (max-width: 800px) {
+  #stat_group {
+    flex-direction: column-reverse;
+  }
+}
+
 #filters{
     display: flex;
     flex-direction: column;
@@ -297,9 +326,21 @@ export default {
     padding: 0.5vmax;
 }
 
+@media screen and (max-width: 800px) {
+  .metrics {
+    width: 80%;
+  }
+}
+
 #chart{
     width: 50%;
     height: 50%;
+}
+
+@media screen and (max-width: 800px) {
+  #chart {
+    width: 95%;
+  }
 }
 
 .button{

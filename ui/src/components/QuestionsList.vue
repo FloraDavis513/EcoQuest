@@ -1,8 +1,18 @@
 <template>
      <div id="main_area">
         <div v-if="draw === 'questions'" class="grid" id="grid">
-            <div class="scroll">
+            <!-- <div class="scroll">
                 <div class="grid_element" v-for="(option, index) in selected_product.questions" @click="choose_question(index)" :key="index">{{ option.shortText }}</div>
+                <div class="grid_element plus" @click="add_question">+</div>
+            </div> -->
+            <div v-for="(option, index) in selected_product.questions" :key="index" class="cell">
+                <div  class="weight" :style="'background-color: ' + option.weight"></div>
+                <div class="grid_element" @click="choose_question(index)">
+                    {{ option.shortText }}
+                </div>
+            </div>
+            <div class="cell">
+                <div class="weight" style="background-color:white;"></div>
                 <div class="grid_element plus" @click="add_question">+</div>
             </div>
         </div>
@@ -20,6 +30,13 @@
                 <input id="color_switcher" type="color" style="width:100%;height:100%;opacity:0;" @input="save_new_color">
             </div>
             <input id="edit_window_input" class="edit_window_input" placeholder="Введите новое название продукта" :value="new_version_product.name" @blur="save_new_name" />
+            <div>
+                <div style="float:left;font-size:1.5vmax;margin-top:2.5%;text-align:left;margin-left:2%;">Связать с:</div>
+                <select v-show="current_round == 3" id="relation" style="font-size:1.5vmax;margin-top:2.5%;text-align:left;margin-left:2%;" @input="change_relation">
+                    <option value="Не выбрано">Не выбрано</option>
+                    <option v-for="(product, index) in first_round_products" :key="index" :value="product.name">{{product.name}}</option>
+                </select>
+            </div>
             <div class="edit_window_group_button">
                 <div @click="save_edit" style="margin-left:25%;" class="button">Сохранить</div>
                 <div @click="reset" class="button" style="margin-left: 10%;">Сбросить</div>
@@ -43,6 +60,13 @@
                 <input style="float:left;width:30%;" type="text" maxlength="16" id="short_name" @blur="save_edit_changes" :value="selected_question.shortText" > -->
             </div>
             <div class="scroll" style="height:80.5%;box-shadow: inset 0 0 20px 1px lightgrey;padding-bottom:2%;">
+                <div v-if="current_round == 3" id="second_line" style="width:100%;height:10%;margin-top:2%;">
+                    <div style="width:30%;float:left;" id="category_header">Связан с:</div>
+                    <select style="float:left;width:30%;" id="question_relation" @input="change_relation_question">
+                        <option>Не выбрано</option>
+                        <option v-for="(question, index) in questions_to_relation" :key="index" :value="question.shortText">{{question.shortText}}</option>
+                    </select>
+                </div>
                 <div id="second_line" style="width:100%;height:10%;margin-top:2%;">
                     <div style="width:30%;float:left;" id="category_header">Категория вопроса</div>
                     <select style="float:left;width:30%;" id="type_selector" :value="get_displayed_type()" @blur="save_edit_changes" @input="update_is_media">
@@ -121,7 +145,7 @@ import { parse } from 'date-fns';
 
 export default {
   name: 'QuestionsList',
-  props:['selected_product', 'products'],
+  props:['selected_product', 'products', 'current_round', 'first_round_products', 'questions_to_relation'],
   data(){
     return {
             selected_question: null,
@@ -137,6 +161,7 @@ export default {
             current_ans_index: null,
             current_ans: null,
             media_preview: false,
+            relation_map: new Map([['Не выбрано', null]])
     }
   },
   methods: {
@@ -328,8 +353,43 @@ export default {
         beautify_date: function (date) {
             let a = parse(date, 'M/d/yyyy hh:mm:ss aa', new Date());
             return a.toLocaleString('ru-RU');
-        }
+        },
+        change_relation: function () {
+            fetch(SERVER_PATH + "/product/relation/update", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({  FirstProduct: this.relation_map.get(document.getElementById("relation").value),
+                                        SecondProduct: this.selected_product.productId})
+        })
+        },
+        change_relation_question: function () {
+        //     fetch(SERVER_PATH + "/product/relation/update", {
+        //         method: "POST",
+        //         headers: {'Content-Type': 'application/json'},
+        //         body: JSON.stringify({  FirstProduct: this.relation_map.get(document.getElementById("relation").value),
+        //                                 SecondProduct: this.selected_product.productId})
+        // })
+        },
   },
+  mounted: function() {
+    this.first_round_products.forEach(product => this.relation_map.set(product.name, product.productId));
+  },
+  updated: function() {
+    if(document.getElementById('relation'))
+    {
+        fetch(SERVER_PATH + "/product/relation/get/" + this.selected_product.productId, {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'},
+                }).then(res => res.json()).then(data => document.getElementById('relation').value = data.name);
+    }
+    if(document.getElementById('question_relation'))
+    {
+        fetch(SERVER_PATH + "/question/relation/get/" + this.selected_question.questionId, {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'},
+                }).then(res => res.json()).then(data => document.getElementById('question_relation').value = data.shortText);
+    }
+  }
 }
 
 document.addEventListener("DOMNodeInserted", function () {
@@ -363,8 +423,8 @@ document.addEventListener("DOMNodeInserted", function () {
     margin-right: 2%;
     margin-bottom: 5%;
     float: left;
-    width: 20%;
-    height: 20%;
+    width: 80%;
+    height: 100%;
     border: 2px solid black;
     border-radius: 20px;
     text-align: center;
@@ -411,7 +471,7 @@ document.addEventListener("DOMNodeInserted", function () {
     width: 70%;
     height: 100%;
     background-color: white;
-    text-align: center;
+    /* text-align: center; */
 }
 
 img{
@@ -450,7 +510,8 @@ input{
 }
 
 #edit_window_input{
-    margin-top: 5.5%;
+    /* margin-top: 5.5%; */
+    text-align: left;
     margin-left: 2%;
     width: 50%;
     border-bottom: 3px solid black;
@@ -530,7 +591,7 @@ input{
     height: 40%;
 }
 
-#type_selector{
+#type_selector, #question_relation{
     width: 40%;
     font-size: 1.3vw;
     padding-top: 0.5%;
@@ -744,5 +805,23 @@ hr{
 
 #img_media_preview:hover{
     transform: scale(1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+}
+
+.cell{
+    float: left;
+    width: 25%;
+    margin-bottom: 2.5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+.weight{
+    width: 50%;
+    height: 0.35vmax;
+    margin-bottom: 2.5%;
+    float: left;
 }
 </style>

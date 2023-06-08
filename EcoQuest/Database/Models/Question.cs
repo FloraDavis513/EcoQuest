@@ -5,6 +5,7 @@
         public Question()
         {
             GameBoards = new HashSet<GameBoard>();
+            QuestionWeights = new HashSet<QuestionWeight>();
         }
 
         public long QuestionId { get; set; }
@@ -17,7 +18,9 @@
         public string LastEditDate { get; set; } = null!;
 
         public virtual Product Product { get; set; } = null!;
+        public virtual RelationQuestion RelationQuestion { get; set; } = null!;
 
         public virtual ICollection<GameBoard> GameBoards { get; set; }
+        public virtual ICollection<QuestionWeight> QuestionWeights { get; set; }
     }
 }

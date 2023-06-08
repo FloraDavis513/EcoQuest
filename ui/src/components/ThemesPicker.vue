@@ -6,6 +6,15 @@
                 {{option.name}}
             </div>
         </div>
+        <hr v-if="weights.length > 0" style="width:75%;color:lightgrey;margin-top:5vmax;">
+        <div v-if="weights.length > 0" id="recommend" title="Рекомендация появляется для продуктов, в которых было допущено больше всего ошибок">
+            <img src="@/assets/bulb.png" style="width:4%;height:4%;">
+            <em style="margin-right: 5px;">
+                Рекомендуется пройти тренировку по продуктам:
+            </em>
+            <em>{{get_recommend_products().slice(0, -2)}}</em>
+        </div>
+        <hr v-if="weights.length > 0" style="width:75%;color:lightgrey;margin-top:1vmax;">
         <div id="group_button">
             <div class="button" @click="to_mode_switcher">Назад</div>
             <div class="button" @click="start_quiz">Начать</div>
@@ -21,6 +30,7 @@ export default {
   data(){
     return {
         products: [],
+        weights: [],
         selected_product: new Set()
     }
   },
@@ -28,6 +38,22 @@ export default {
   methods:{
     fill_product_list: function (products) {
         this.products = products;
+        fetch(SERVER_PATH + "/question/weight/get/all/" + JSON.parse(localStorage.getItem('user')).userId, {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'},
+            }).then(res => res.json()).then(data => {
+                this.products.forEach(product => {
+                    data.forEach(current_product => {
+                        if(product.productId == current_product.productId && current_product.weight > 10)
+                            this.weights.push(product.name);
+                    })
+                });
+            });
+    },
+    get_recommend_products: function () {
+        let res = '';
+        this.weights.forEach(product => res += product + ', ')
+        return res;
     },
     select_product: function (event, option) {
         if(this.selected_product.has(option.productId))
@@ -82,6 +108,12 @@ export default {
 
 #menu_header{
     margin-top: 1vmax;
+}
+
+#recommend{
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #group_themes{

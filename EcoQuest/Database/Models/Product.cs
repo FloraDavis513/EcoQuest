@@ -6,6 +6,7 @@
         {
             GameBoardsProducts = new HashSet<GameBoardsProduct>();
             Questions = new HashSet<Question>();
+            QuestionWeights = new HashSet<QuestionWeight>();
         }
 
         public long ProductId { get; set; }
@@ -16,5 +17,7 @@
 
         public virtual ICollection<GameBoardsProduct> GameBoardsProducts { get; set; }
         public virtual ICollection<Question> Questions { get; set; }
+        public virtual ICollection<QuestionWeight> QuestionWeights { get; set; }
+        public virtual RelationProduct RelationsProduct { get; set; }
     }
 }

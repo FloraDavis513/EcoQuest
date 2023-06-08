@@ -3,19 +3,22 @@
         <div class="logo">
             <div class="green_part">Э</div><div class="black_part">ко</div><div class="green_part">К</div><div class="black_part">вест</div>
         </div>
-        <div class="role">Администратор</div>
-        <div id="updated_message" style="width:23.33%;float:left;text-align:right;font-size:1.5vw;margin-top:0.5%;color:white;">Продукты обновлены</div>
+        <div class="role">{{user_name() + " (администратор)"}}</div>
+        <div id="updated_message" style="width:20%;float:left;text-align:right;font-size:1.5vw;margin-top:0.5%;color:white;">Продукты обновлены</div>
         <div class="profile"><img src="@/assets/profile.png" @click="vis = !vis"></div>
         <div v-if="vis" id="profile_menu">
             <div id="gen_stat" @click="download_products" style="position:relative;float:left;margin-left: 8%;">
                 Выгрузить продукты
             </div>
-            <div id="gen_stat" style="position:relative;float:left;height:24%;margin-left: 8%;">
+            <div id="gen_stat" style="position:relative;float:left;height:18%;margin-left: 8%;">
                 <div id="gen_prod" style="position:absolute;margin-left:0;">Загрузить продукты</div>
                 <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;opacity: 0;" @change="upload_products" @mouseenter="underline_up" @mouseleave="underline_down">
             </div>
             <div id="gen_stat" @click="download_stat" style="position:relative;float:left;">
                 Выгрузить статистику
+            </div>
+            <div id="gen_stat" @click="download_quiz_stat" style="position:relative;float:left;">
+                Выгрузить статистику викторин
             </div>
             <div id="change_pass" style="position:relative;float:left;" @click="change_pass">
                 Сменить пароль
@@ -101,6 +104,16 @@ export default {
         });
         this.start_download(SRC_PATH + file_name + '.xlsx');
     },
+    download_quiz_stat: async function () {
+        let current_date = new Date();
+        let file_name = `quiz_statistics_${current_date.getDate()}_${current_date.getMonth() + 1}_${current_date.getFullYear()}`;
+        await fetch(SERVER_PATH + "/statistic/players/export", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({FileName: file_name})
+        });
+        this.start_download(SRC_PATH + file_name + '.xlsx');
+    },
     start_download: function (href) {
         const link = document.createElement('a')
         link.setAttribute('href', href);
@@ -108,7 +121,10 @@ export default {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-    }
+    },
+    user_name: function () {
+          return JSON.parse(localStorage.getItem('user')).name;
+      },
   }
 }
 </script>
@@ -128,7 +144,7 @@ export default {
 
 .logo {
     float: left;
-    width: 33.33%;
+    width: 25%;
 }
 .green_part{
     float: left;
@@ -142,25 +158,25 @@ export default {
 .role {
     float: left;
     text-align: center;
-    width: 33.33%;
+    width: 50%;
 }
 
 .profile {
     float: left;
     text-align: right;
-    width: 10%;
+    width: 5%;
 }
 
 .profile img {
     float: right;
-    width: 30%;
-    height: 30%;
+    width: 60%;
+    height: 60%;
     margin-right: 5%;
 }
 
 #profile_menu{
     width: 15%;
-    height: 35%;
+    height: 50%;
     left: 84.7%;
     top: 9.4%;
     position: absolute;

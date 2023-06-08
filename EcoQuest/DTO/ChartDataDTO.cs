@@ -8,5 +8,6 @@
         public long Badges { get; set; }
         public long TotalQuiz { get; set; }
         public long Duration { get; set; }
+        public long UniqueAnswers { get; set; }
     }
 }

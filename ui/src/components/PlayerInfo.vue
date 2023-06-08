@@ -1,0 +1,375 @@
+<template>
+    <div class="main_field" id="requests">
+        <div class="master_data" v-if="master_chosen">
+            <div class="go_back" @click="go_back">
+                <img src="@/assets/go_back.png" alt="">
+            </div>
+            <div v-if="state == 'edit'">
+                <div class="group_inputs">
+                    <div class="form-group">
+                        <label class="form-label" for="name">{{'Фамилия: ' + selected.lastName}}</label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="name">{{'Имя: ' + selected.firstName}}</label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="name">{{'Отчество: ' + selected.patronymic}}</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="login" class="form-label" for="login">{{'Логин: ' + selected.login}}</label>
+                    </div>
+
+                    <div v-show="is_reset" class="form-group">
+                        <label id="password" class="form-label" for="password"></label>
+                    </div>
+                </div>
+                <div class="group_button">
+                    <div v-if="draw == 'edit'" @click="reset_password" class="button">
+                        Сбросить пароль
+                    </div>
+                    <div @click="check_remove_old_master" class="button">
+                        Удалить
+                    </div>
+                </div>
+            </div>
+            <div v-if="state == 'confirm_delete'" id="delete_group">
+                <div id="delete_header">Вы уверены, что хотите удалить игрока {{selected.firstName + ' ' + selected.patronymic + ' ' + selected.lastName}}?</div>
+                <div class="group_button">
+                    <div @click="remove_old_master" class="button">
+                        Да
+                    </div>
+                    <div @click="cancel_delete" class="button">
+                        Нет
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import { SERVER_PATH } from '../common_const.js'
+
+export default {
+  name: 'PlayerInfo',
+  props: ['master_chosen', 'selected'],
+  data(){
+    return {
+        options: [ ],
+        counter: 0,
+        draw: 'edit',
+        state: 'edit',
+        is_reset: false
+    }
+  },
+  methods: {
+        beautify_role: function (input_role) {
+            if(input_role == "admin")
+            return "Администратор";
+        else if(input_role == "master")
+            return "Ведущий";
+        else if(input_role == "player")
+            return "Игрок";
+        },
+        generatePassword: function () {
+            var length = 8,
+                charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                retVal = "";
+            for (var i = 0, n = charset.length; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * n));
+            }
+            return retVal;
+        },
+        reset_password: async function () {
+            let new_pass = this.generatePassword();
+            await fetch(SERVER_PATH + "/user/update/password/reset", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({Login: this.selected.login, NewPassword: new_pass})
+                });
+            document.getElementById("password").innerText = "Новый пароль: " + new_pass;
+            this.is_reset = true;
+        },
+        add: function (add_index) {
+            var change_user = this.options[add_index];
+            this.$emit('add-master', change_user);
+            this.options = this.options.filter((option, index) => index != add_index);
+            fetch(SERVER_PATH + "/user/toActiveUser/" + String(change_user.userId), {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                })
+        },
+        remove: function (event) {
+            var deleted_id = event.target.parentElement.parentElement.parentElement.getAttribute("value");
+            this.options = this.options.filter(option => option.userId != deleted_id);
+            fetch(SERVER_PATH + "/user/delete/" + String(deleted_id), {
+                method: "DELETE",
+                headers: {'Content-Type': 'application/json'}
+                });
+        },
+        check_remove_old_master: function () {
+            this.state = 'confirm_delete'
+        },
+        remove_old_master: function () {
+            this.$emit('remove-master');
+            this.state = 'edit'
+        },
+        cancel_delete: function () {
+            this.state = 'edit'
+        },
+        go_back: function () {
+            this.$emit('go-back');
+            this.state = 'edit'
+        },
+    },
+    created: function () {
+        this.counter = this.options.length;
+    },
+    beforeMount: function () {
+        let masters_ref = this.options;
+        masters_ref.length = 0;
+        this.$nextTick(function () {
+
+        fetch(SERVER_PATH + "/user/get/inactiveUsers", {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'}
+                }).then( res => res.json() ).then( data => data.forEach(function(item) {
+                   masters_ref.push(item)}) );
+        });
+    },
+    updated: function() {
+        if(this.draw == 'save_edit')
+            return;
+        var list = document.getElementsByClassName("form-control");
+        for (let item of list) {
+            item.style.pointerEvents = 'none';
+        }
+    },
+    watch: {
+        selected: function () {
+            this.state = 'edit';
+            this.draw = 'edit';
+        }
+    }
+}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+.main_field{
+    width: 77%;
+    height: 89%;
+    margin-left: 20%;
+}
+
+.master_data{
+    width: 100%;
+    height: 90%;
+    margin-top: 4.5%;
+}
+
+.new_requests{
+    float: left;
+    width: 90%;
+    text-align: center;
+    height: 95%;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    margin-left: 1%;
+}
+.requests_title{
+    font-size: 1.5vw;
+    font-weight: bold;
+    height: 5%;
+    margin-left: 12%;
+}
+
+.scroll_1{
+    height: 95%;
+    overflow: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    width: 100%;
+    margin-left: 6%;
+}
+
+.scroll_1::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.option_requests{
+    height: 5%;
+    text-indent: 5%;
+    padding-top: 0.7%;
+    padding-bottom: 0.7%;
+    text-align: left;
+    border-radius: 35px;
+    background-color: silver;
+    color: #000000;
+    font-size: 1.3vw;
+    margin: 1.5%;
+    font-weight: bold;
+    display: table;
+    width: 95%;
+}
+
+/* Manage masters */
+
+.master_name{
+    float: left;
+    width: 84%;
+    height: 100%;
+    margin-top: 0.75%;
+}
+
+.accept{
+    float: left;
+    width: 7%;
+    height: 100%;
+    margin-top: 0.5%;
+}
+
+.reject{
+    float: left;
+    width: 7%;
+    margin-right: 2%;
+    margin-top: 0.5%;
+    height: 100%;
+}
+
+img{
+    width: 45%;
+    height: 45%;
+    transition: transform .25s ease;
+}
+
+img:hover{
+    transform: scale(1.2); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+}
+
+/* chosen master */
+
+.go_back{
+    float: left;
+    height: 8%;
+    width: 8%;
+}
+
+.go_back img{
+    height: 70%;
+    width: 70%;
+}
+
+/* .inputs{
+    float: left;
+    width: 83.5%;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    margin-left: 5%;
+}
+
+.inputs input{
+    width: 80%;
+    border-bottom: 1.5px solid silver;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    outline:none;
+    pointer-events: none;
+    font-size: 1.3vw;
+} */
+
+/* #header_fio{
+    width: 8%;
+    border-bottom: 1.5px solid silver;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    outline:none;
+    pointer-events: none;
+    font-size: 1.3vw;
+} */
+
+.prefix input{
+    width: 2%;
+}
+
+/* manage data masters */
+
+.group_inputs{
+    float: left;
+    width: 90%;
+    height: 25%;
+}
+
+.group_button{
+    float: left;
+    width: 80%;
+    margin-left: 17.5%;
+    margin-bottom: 3%;
+}
+
+.button{
+    width: 35%;
+    float: left;
+    margin-top: 2%;
+    margin-right: 4%;
+    margin-left: 4%;
+    background-color: green;
+    color: #ffffff;
+    font-size: 1.2vw;
+    font-weight: bold;
+    border-radius: 35px;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    text-align: center;
+}
+
+.button:hover {
+    box-shadow: 0 0 10px 100px orange inset;
+}
+
+.table{
+    margin-left: 12%;
+    width: 85%;
+}
+
+caption{
+    margin-bottom: 1%;
+    font-size: 1.2vw;
+    font-weight: bold;
+}
+
+#delete_header{
+    text-align: center;
+    font-size: 1.5vw;
+    width: 90%;
+}
+
+#delete_group{
+    margin-top: 4.5%;
+    float: left;
+    width: 90%;
+}
+
+.form-control{
+    width: 90%;
+    margin-left: 5%;
+    font-size: 1.3vw;
+    border-bottom: 0.1vw solid silver;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    outline:none;
+    margin-top: 0.5%;
+}
+.form-label{
+    margin-left: 5%;
+    font-size: 1.3vw;
+}
+.form-group{
+    margin-top: 3%;
+}
+</style>

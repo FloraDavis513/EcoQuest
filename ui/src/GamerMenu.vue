@@ -1,6 +1,6 @@
 <template>
     <GamerHeader @logout="log_out" @change-pass="change_pass = true" @to-gamer-stat="to_gamer_stat" />
-    <ModeSwitcher v-if="menu == 'menu'" @pick-themes="pick_themes" @show-help="show_help" @start-quiz="start_quiz" @show-stat="show_stat" @show-rate="show_rate" />
+    <ModeSwitcher v-if="menu == 'menu'" @pick-themes="pick_themes" @show-help="show_help" @start-quiz="start_quiz" @start-challenge-quiz="start_quiz" @show-stat="show_stat" @show-rate="show_rate" />
     <ThemesPicker v-if="menu == 'themes'" :mode="mode" @switch-mode="switch_mode" @start-quiz="start_quiz" />
     <QuizRules v-if="menu == 'help'" @switch-mode="switch_mode" />
     <PlayerStat v-if="menu == 'stat'" @switch-mode="switch_mode" />
@@ -14,6 +14,7 @@ import ThemesPicker from './components/ThemesPicker.vue'
 import QuizRules from './components/QuizRules.vue'
 import PlayerStat from './components/PlayerStat.vue'
 import PlayerRate from './components/PlayerRate.vue'
+import { SERVER_PATH } from './common_const.js'
 
 export default {
   name: 'GamerMenu',
@@ -43,7 +44,6 @@ export default {
         this.menu = 'help';
     },
     show_stat: function () {
-      console.log("stat");
         this.menu = 'stat';
     },
     show_rate: function () {
@@ -58,7 +58,18 @@ export default {
     to_gamer_stat: function () {
         this.$emit('to-gamer-stat');
     },
-  }
+  },
+  beforeCreate: async function () {
+      if(!localStorage.getItem('user'))
+        this.log_out();
+      await fetch(SERVER_PATH + "/gamer", {
+              method: "GET",
+              headers: {'Content-Type': 'application/json', "Authorization": "Bearer " + JSON.parse(localStorage.getItem('user')).authorizationToken}
+      }).then(res => {
+          if(res.status === 401 || res.status === 403)
+              this.log_out();
+      });
+  },
 }
 </script>
 

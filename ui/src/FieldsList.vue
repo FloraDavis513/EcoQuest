@@ -1,14 +1,17 @@
 <template>
     <AdminHeader @logout="log_out" @change-pass="change_pass = true" @reload-question="read_product_list()"/>
-    <NavigationButton @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @masters="to_masters" />
+    <NavigationButton @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @masters="to_masters" @players="to_players" @challenge="to_challenge" />
 
     <ManageMasters v-if="current_view == 'masters'"/>
+    <ManagePlayers v-if="current_view == 'players'"/>
+
+    <ChallengeList v-if="current_view == 'challenge'" :challenge="challenge" />
 
     <FieldList v-if="current_view == 'fields'" @add-field="add_field" @select-product="select_product" :products="products" />
     <AddFields v-if="current_view == 'fields'" @close-add-field="close_add_field" @create-field="create_field" :is_add_product="is_add_product" />
 
     <ProductMenu v-if="current_view == 'questions'" :current_view="current_view" :round="current_round" :selected_product="selected_product" @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @delete-product="delete_product" @edit-product="edit_product" />
-    <QuestionsList v-if="current_view == 'questions'" @to-masters="to_masters" @add-question="add_question" @edit-question="edit_question" @delete-question="delete_question" @final-delete-product="final_delete_product" @final-edit-product="final_edit_product" @reset-edit="reset_edit" :selected_product="selected_product" :draw="draw" :products="products" :cache_product="cache_product" ref="q_list" @reload-question="read_product_list()" />
+    <QuestionsList v-if="current_view == 'questions'" @to-masters="to_masters" @add-question="add_question" @edit-question="edit_question" @delete-question="delete_question" @final-delete-product="final_delete_product" @final-edit-product="final_edit_product" @reset-edit="reset_edit" :selected_product="selected_product" :draw="draw" :products="products" :current_round="current_round" :first_round_products="first_round_products" :cache_product="cache_product" :questions_to_relation="questions_to_relation" ref="q_list" @reload-question="read_product_list()" />
 
     <div id="question_preview" v-show="change_pass">
         <div style="float:right;font-size:1.75vw;margin-top:0.25%;margin-right:2.5%;width:10%;text-align:right;" @click="close_changes_pass">x</div>
@@ -29,6 +32,8 @@ import AddFields from './components/AddFields.vue'
 import ProductMenu from './components/ProductMenu.vue'
 import QuestionsList from './components/QuestionsList.vue'
 import ManageMasters from './components/ManageMasters.vue'
+import ManagePlayers from './components/ManagePlayers.vue'
+import ChallengeList from './components/ChallengeList.vue'
 import { SERVER_PATH } from './common_const.js'
 
 export default {
@@ -40,7 +45,9 @@ export default {
     AddFields,
     ProductMenu,
     QuestionsList,
-    ManageMasters
+    ManageMasters,
+    ManagePlayers,
+    ChallengeList
   }, 
   data(){
     return {
@@ -53,7 +60,9 @@ export default {
         products: [],
         cache_product: ['name', 'colour'],
         change_pass: false,
-        error_change: false
+        error_change: false,
+        first_round_products: [],
+        questions_to_relation: []
     }
   },
   methods: {
@@ -87,6 +96,12 @@ export default {
         to_masters: function () {
             this.current_view = 'masters';
         },
+        to_players: function () {
+            this.current_view = 'players';
+        },
+        to_challenge: function () {
+            this.current_view = 'challenge';
+        },
         to_fields_1: function () {
             this.current_view = 'fields';
             this.current_round = 1;
@@ -119,6 +134,31 @@ export default {
         select_product: function(selected){
             this.current_view = 'questions';
             this.selected_product = selected;
+            this.selected_product.questions.forEach(question => {
+                fetch(SERVER_PATH + "/question/weight/get", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ProductId: null, QuestionId: question.questionId, Weight: null})
+            }).then(res => res.text()).then(data => {
+                if(data == 0)
+                    question.weight = 'rgb(0, 255, 0);';
+                else if(data <= 50)
+                    question.weight = `rgb(${255 * data / 50}, 255, 0);`;
+                else
+                    question.weight = `rgb(255, ${255 - 255 * (data - 50) / 50}, 0);`;
+                });
+            });
+            if(this.selected_product.round != 3)
+                return;
+            fetch(SERVER_PATH + "/product/relation/get/" + this.selected_product.productId, {
+                method: "GET",
+                headers: {'Content-Type': 'application/json'},
+                }).then(res => res.json()).then(data => {
+                    this.first_round_products.forEach(product => {
+                    if(product.productId == data.id)
+                        this.questions_to_relation = product.questions;
+                    });
+            });
         },
         delete_product: function(){
             this.$refs.q_list.check_delete_product();
@@ -190,6 +230,20 @@ export default {
         },
         fill_product_list: function(data){
             this.products = data;
+            this.products.forEach(product => {
+                fetch(SERVER_PATH + "/question/weight/get", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ProductId: product.productId, QuestionId: null, Weight: null})
+            }).then(res => res.text()).then(data => {
+                if(data == 0)
+                    product.weight = 'rgb(0, 255, 0);';
+                else if(data <= 50)
+                    product.weight = `rgb(${255 * data / 50}, 255, 0);`;
+                else
+                    product.weight = `rgb(255, ${255 - 255 * (data - 50) / 50}, 0);`;
+                });
+            });
             if(this.selected_product)
                 this.update_selected();
         },
@@ -201,8 +255,12 @@ export default {
             }
         },
   }, 
-  mounted: function () {
+  created: function () {
       this.read_product_list();
+      fetch(SERVER_PATH + "/product/get/all/1", {
+            method: "GET",
+            headers: {'Content-Type': 'application/json'}
+            }).then( res => res.json() ).then( data => this.first_round_products = data );
   },
     beforeCreate: async function () {
         if(!localStorage.getItem('user'))

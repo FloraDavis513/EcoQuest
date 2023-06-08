@@ -9,11 +9,11 @@
         <div class="helps_group">
             <div style="margin-right:1vmax;">Подсказки:</div>
             <div v-show="quiz.helps.Fifty" class="helps_group">
-                <img id="fifty" title="Убрать два неверных ответа" src="@/assets/50.png" class="help_img" @click="use_fifty"/>
+                <div id="fifty" class="help_img" title="Убрать два неверных ответа" @click="use_fifty">50:50</div>
                 <div class="help_counter">{{'&#215; ' + quiz.helps.Fifty}}</div>
             </div>
             <div v-show="quiz.helps.RightMistake" class="helps_group">
-                <img src="@/assets/next.png" title="Право на ошибку" class="help_img" @click="use_right_mistake"/>
+                <div id="right_mistake" class="help_img" title="Право на ошибку" @click="use_right_mistake">2 шанс</div>
                 <div class="help_counter">{{'&#215; ' + quiz.helps.RightMistake}}</div>
             </div>
         </div>
@@ -270,6 +270,20 @@ export default {
     },
   },
   beforeCreate: async function() {
+    if(this.mode == 'challenge')
+    {
+        await fetch(SERVER_PATH + '/quiz/get/challenge', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({UserId: JSON.parse(localStorage.getItem('user')).userId, mode: this.mode, password: "Пароль"})
+                    }).then(res => res.json()).then(data => this.quiz = data);
+        this.quiz.questions = JSON.parse(this.quiz.questions);
+        this.quiz.helps = JSON.parse(this.quiz.helps);
+        this.quiz.questions.forEach(question => {
+            question.answers = JSON.parse(question.answers);
+            });
+        return;
+    }
     if(this.quiz_products.length == 0)
     {
         await fetch(SERVER_PATH + '/quiz/get/random/' + JSON.parse(localStorage.getItem('user')).userId, {
@@ -295,8 +309,6 @@ export default {
             question.answers = JSON.parse(question.answers);
         });
     }
-
-    console.log(this.quiz);
   },
   mounted: function() {
     setInterval(this.second_left, 1000);
@@ -352,6 +364,12 @@ export default {
     border-radius: 1vmax;
 }
 
+@media screen and (max-width: 800px) {
+  .answer {
+    height: 10vmax;
+  }
+}
+
 .input_answer{
     width: 47.5vmax;
     max-width: 100%;
@@ -403,19 +421,31 @@ input.input_answer{
     font-size: 1.9vmax;
     margin-top: 0.5vmax;
 }
-img.help_img{
+.help_img{
     width: 5vmax;
-    height: 4vmax;
+    height: 2vmax;
     border: solid 0.25vmax black;
     border-radius: 1vmax;
+    padding: 1vmax 0.5vmax 1vmax 0.5vmax;
+    text-align: center;
 }
 
-img.help_img:hover{
+.help_img:hover{
     border: solid 0.25vmax red;
 }
 
 .help_counter{
     margin-left: 0.5vmax;
     margin-right: 0.5vmax;
+}
+
+#right_mistake{
+    font-size: 1.5vmax;
+}
+
+@media screen and (max-width: 800px) {
+  #right_mistake {
+    font-size: 1.45vmax;
+  }
 }
 </style>

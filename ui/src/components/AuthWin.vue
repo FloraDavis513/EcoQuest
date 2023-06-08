@@ -118,7 +118,7 @@ export default {
               fetch(`${SERVER_PATH}/auth/login`, {
                 method: 'POST',
                 body: formData
-              }).then( res => {res.json(); this.$emit('login-admin')} ).then( data => console.log(data) );
+              }).then( res => {res.json(); this.$emit('login-admin')} );
         },
         check_failed: function () {
             if(this.failed)

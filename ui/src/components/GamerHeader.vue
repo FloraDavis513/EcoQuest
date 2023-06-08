@@ -56,14 +56,14 @@ export default {
     border-bottom: 2px solid silver;
     padding: 1%;
     height: 5%;
-    font-size: 2.2vw;
+    font-size: 2.2vmax;
     color: #000000;
     margin-bottom: 0.1%;
 }
 
 .logo {
     float: left;
-    width: 33.33%;
+    width: 30%;
 }
 .green_part{
     float: left;
@@ -77,13 +77,13 @@ export default {
 .role {
     float: left;
     text-align: center;
-    width: 33.33%;
+    width: 40%;
 }
 
 .profile {
     float: left;
     text-align: right;
-    width: 33.33%;
+    width: 30%;
 }
 
 .profile img {
@@ -91,6 +91,13 @@ export default {
     width: 9%;
     height: 9%;
     margin-right: 5%;
+}
+
+@media screen and (max-width: 800px) {
+  .profile img {
+     width: 25%;
+    height: 25%;
+  }
 }
 
 #profile_menu{

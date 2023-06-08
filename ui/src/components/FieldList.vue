@@ -1,10 +1,16 @@
 <template>
     <div class="scroll">
      <div class="grid" id="grid">
-        <div class="grid_element" v-for="(option, index) in products" @click="select_product(index)" :key="index" v-bind:style="option.colour">
-            {{ option.name }}
+        <div v-for="(option, index) in products" :key="index" class="cell">
+            <div  class="weight" :style="'background-color: ' + option.weight"></div>
+            <div class="grid_element"  @click="select_product(index)"  v-bind:style="option.colour">
+                {{ option.name }}
+            </div>
         </div>
-        <div class="grid_element plus" @click="add_product">+</div>
+        <div class="cell">
+            <div class="weight" style="background-color:white;"></div>
+            <div class="grid_element plus" @click="add_product">+</div>
+        </div>
      </div>
     </div>
 </template>
@@ -23,8 +29,8 @@ export default {
         },
         select_product: function (index) {
             this.$emit('select-product', this.products[index]);
-        },
-  }
+        }
+  },
 }
 </script>
 
@@ -38,12 +44,10 @@ export default {
 }
 
 .grid_element{
-    margin-left: 2.6%;
-    margin-right: 2%;
     margin-bottom: 5%;
     float: left;
-    width: 15%;
-    height: 20%;
+    width: 80%;
+    height: 100%;
     border: 0.15vw solid black;
     border-radius: 1vw;
     text-align: center;
@@ -82,5 +86,23 @@ export default {
 .scroll::-webkit-scrollbar {
     width: 0;
     height: 0;
+}
+
+.cell{
+    float: left;
+    width: 20%;
+    margin-bottom: 2.5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    text-align: center;
+}
+
+.weight{
+    width: 50%;
+    height: 0.35vmax;
+    margin-bottom: 2.5%;
+    float: left;
 }
 </style>

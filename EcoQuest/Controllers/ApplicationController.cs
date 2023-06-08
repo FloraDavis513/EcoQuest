@@ -55,6 +55,16 @@ namespace EcoQuest
                 Console.WriteLine("==========/templates==========");
                 return Results.Ok();
             });
+            _app.MapGet("/gamer", [Authorize(Roles = "player")] () =>
+            {
+                Console.WriteLine("==========/gamer==========");
+                return Results.Ok();
+            });
+            _app.MapGet("/quiz", [Authorize(Roles = "player")] () =>
+            {
+                Console.WriteLine("==========/quiz==========");
+                return Results.Ok();
+            });
 
             _app.MapPost("/authentication/login/master", _service.AuthenticationLoginMaster);
             _app.MapPost("/authentication/login/player", _service.AuthenticationLoginPlayer);
@@ -88,16 +98,23 @@ namespace EcoQuest
             _app.MapDelete("/product/logo/delete/{id:long}", _service.ProductLogoDeleteId);
             _app.MapPost("/product/logo/update/{id:long}", _service.ProductLogoUpdateId);
             _app.MapPost("/product/update", _service.ProductUpdate);
+            _app.MapPost("/product/relation/update", _service.UpdateRelation);
+            _app.MapGet("/product/relation/get/{id:long}", _service.GetRelation);
 
             _app.MapDelete("/question/delete/{id:long}", _service.QuestionDeleteId);
             _app.MapPost("/question/media/create/{id:long}", _service.QuestionMediaCreateId);
             _app.MapDelete("/question/media/delete/{id:long}", _service.QuestionMediaDeleteId);
             _app.MapPost("/question/media/update/{id:long}", _service.QuestionMediaUpdateId);
+            _app.MapPost("/question/weight/get", _service.GetQuestionWeight);
+            _app.MapGet("/question/weight/get/all/{id:long}", _service.GetQuestionWeightToPlayer);
+            _app.MapGet("/question/weight/get/all", _service.GetQuestionWeightAll);
+            _app.MapGet("/question/relation/get/{id:long}", _service.GetQuestionRelation);
 
             _app.MapPost("/statistic/create", _service.StatisticCreate);
             _app.MapPost("/statistic/export", _service.StatisticExport);
             _app.MapPost("/statistic/user", _service.GetPlayerStat);
             _app.MapPost("/statistic/chart", _service.GetChartData);
+            _app.MapPost("/statistic/players/export", _service.StatisticPlayersExport);
 
             _app.MapPost("/user/create", _service.UserCreate);
             _app.MapDelete("/user/delete/{id:long}", _service.UserDeleteId);
@@ -112,9 +129,16 @@ namespace EcoQuest
 
             _app.MapGet("/quiz/get/random/{id:long}", _service.GetRandomQuiz);
             _app.MapPost("/quiz/get", _service.GetQuiz);
+            _app.MapPost("/quiz/get/challenge", _service.GetChallengeQuiz);
             _app.MapPost("/quiz/checkAnswer", _service.CheckAnswer);
             _app.MapGet("/quiz/result/{id:long}", _service.GetResult);
             _app.MapPost("/quiz/help", _service.UseHelp);
+
+            _app.MapGet("/challenge/get/all", _service.GetAllChallenge);
+            _app.MapGet("/challenge/get/{id:long}", _service.GetChallengeById);
+            _app.MapPost("/challenge/check", _service.CheckChallengeExist);
+            _app.MapPost("/challenge/update", _service.UpdateChallenge);
+            _app.MapDelete("/challenge/delete/{id:long}", _service.DeleteChallengeById);
         }
     }
 }

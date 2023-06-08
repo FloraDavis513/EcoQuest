@@ -137,10 +137,40 @@ export default {
       this.$refs.settings.count_field_now();
     },
     select_template: async function (tmpl) {
+      let weights = new Map();
       await fetch(SERVER_PATH + "/gameBoard/get/" + String(tmpl.gameBoardId), {
             method: "GET",
             headers: {'Content-Type': 'application/json'}
             }).then( res => res.json() ).then( data => this.current_template = data );
+      await fetch(SERVER_PATH + "/question/weight/get/all", {
+            method: "GET",
+            headers: {'Content-Type': 'application/json'}
+            }).then( res => res.json() ).then( data => data.forEach( weight => weights.set(weight.questionId, weight.weight)));
+      this.current_template.products.forEach(product => {
+                if(product.round != 1)
+                  return;
+                product.allQuestions.forEach(question => {
+                  const weight_number = weights.get(question.questionId)
+                  if(weight_number == 0)
+                    question.weight = 'rgb(0, 255, 0);';
+                  else if(weight_number <= 50)
+                      question.weight = `rgb(${255 * weight_number / 50}, 255, 0);`;
+                  else
+                      question.weight = `rgb(255, ${255 - 255 * (weight_number - 50) / 50}, 0);`;
+                  })
+                fetch(SERVER_PATH + "/question/weight/get", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ProductId: product.productId, QuestionId: null, Weight: null})
+            }).then(res => res.text()).then(data => {
+                if(data == 0)
+                    product.weight = 'rgb(0, 255, 0);';
+                else if(data <= 50)
+                    product.weight = `rgb(${255 * data / 50}, 255, 0);`;
+                else
+                    product.weight = `rgb(255, ${255 - 255 * (data - 50) / 50}, 0);`;
+                });
+            });
       this.draw = 'settings';
     },
     back_to_templates: function () {

@@ -22,11 +22,8 @@
         <div class="master_menu_button" @click="share_template" >
             Поделиться
         </div>
-        <!-- <div class="master_menu_button" id="start" @click="create_game">
-            Запустить игру
-        </div> -->
     </div>
-</div>
+  </div>
 </template>
 
 <script>

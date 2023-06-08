@@ -20,9 +20,6 @@ export default {
     }
   },
   methods:{
-    pick_themes: function () {
-        this.menu = false;
-    },
     beautify_timer: function(elapsed_seconds) {
         const elapsed_minutes = Math.floor(elapsed_seconds / 60);
         const remain_seconds = elapsed_seconds - elapsed_minutes * 60;
