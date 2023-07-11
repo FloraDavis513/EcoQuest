@@ -7,6 +7,9 @@
         <div v-for="option in players.filter((item) => item.List === 0)" :key="option.title" class="wait_users" draggable="true" @dragstart="startDrag($event, option)">
             {{option.Login}}
         </div>
+        <div style="width:100%;display: flex;align-items: center;justify-content: center;" @click="reload_players">
+            <img src="@/assets/reload.png" style="width:1.5vw;height:1.5vw;margin-top:5%;">
+        </div>
     </div>
     
     <div id="group_teams">
@@ -196,16 +199,14 @@ export default {
             }
             this.$emit('start-game');
         },
-        pollData () {
-            this.polling = setInterval(() => {
-                fetch(SERVER_PATH + "/game/get/" + String(this.game_id), {
+        reload_players: async function () {
+            await fetch(SERVER_PATH + "/game/get/" + String(this.game_id), {
                 method: "GET",
                 headers: {'Content-Type': 'application/json'}
                 }).then( res => res.json() ).then( data => this.game = data );
             this.game.state = JSON.parse(this.game.state);
             this.players = this.game.state.Players;
-                }, 5000);
-    },
+        }
   },
   beforeCreate: async function () {
         await fetch(SERVER_PATH + "/lobby", {
@@ -221,18 +222,6 @@ export default {
         //         }).then( res => res.json() ).then( data => this.game = data );
         //     this.game.state = JSON.parse(this.game.state);
         // this.game.state.joined_players.forEach(player => this.players.push({name:player.name, id:this.players.length + 1, list:0}));
-    },
-    beforeUnmount () {
-        clearInterval(this.polling)
-    },
-    async created () {
-        await fetch(SERVER_PATH + "/game/get/" + String(this.game_id), {
-                method: "GET",
-                headers: {'Content-Type': 'application/json'}
-                }).then( res => res.json() ).then( data => this.game = data );
-            this.game.state = JSON.parse(this.game.state);
-            this.players = this.game.state.Players;
-        this.pollData()
     }
 }
 </script>

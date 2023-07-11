@@ -10,7 +10,7 @@
     <div id="timer">{{game.state.timer[0]}}:{{game.state.timer[1]}}:{{game.state.timer[2]}}</div>
     <img src="@/assets/start.png" id="question_start" @click="start_timer">
     <div id="question_timer">00:30</div>
-    <FirstRoundField v-if="number_round == 1" ref="FirstRound" :logos="logos" :game_settings="game" :current_question="current_question" :turn="turn" @update-field="update_chip_positions"/>
+    <FirstRoundField v-if="number_round == 1" ref="FirstRound" :teams="calc_exist_team()" :logos="logos" :game_settings="game" :current_question="current_question" :turn="turn" @update-field="update_chip_positions"/>
     <SecondRoundField v-if="number_round != 1" :teams="calc_exist_team()" :game_settings="game" :question="current_question" @second-round-pos="init_second_round_pos" @second-round-question="sec_round_question" />
     <div class="chip" v-for="(player, index) in current_chip_poses" :key="index" :style="player">
       <img v-if="index == 0" :src="img_path + 'team_logo_' + String(Number(logos[0]) + 1) + '.svg'" style="width:100%;height:100%;">
@@ -36,7 +36,7 @@ export default {
         current_global_timer: null,
         current_global_save: null,
         current_time: null,
-        is_paused: false,
+        is_paused: true,
         final_questions: [],
         semifinal_questions: [],
         second_tour_ids_question: [],
@@ -82,6 +82,7 @@ export default {
       return result;
     },
     async generate_random_number () {
+      document.getElementById("greeting_message").style.height = '90%';
       if( JSON.parse(localStorage.getItem('user')).role == 'player' )
         return;
         if(this.current_number == 0)  // Если ещё не начинали игру, то нужно инициализировать возможные позиции фишек и вопросы на каждом поле.
@@ -275,10 +276,10 @@ export default {
           return;
 
         this.current_chip_poses.length = 0;
-        this.teams.forEach((item, index) => {
+        this.teams.forEach((item) => {
             if(item.length > 0)
             {
-              let start = document.getElementById("start_" + String(index + 1));
+              let start = document.getElementById("start_" + String(this.current_chip_poses.length + 1));
               this.current_chip_poses.push('top:' + start.getBoundingClientRect().top + 'px;left:' + start.getBoundingClientRect().left + "px;");
             }
         });
@@ -332,8 +333,8 @@ export default {
     },
     replace_f: function () {
       let prev_turn = this.turn - 1;
-      if( prev_turn ==  -1)
-        prev_turn = 3;
+      if(prev_turn == -1)
+        prev_turn = this.current_chip_poses.length - 1;
       let current_pos;
       let number = 1;
       for(var i = 0; i < this.circle.length; ++i) // На каждом ходу сдвигаем фишку на выпавшее число.

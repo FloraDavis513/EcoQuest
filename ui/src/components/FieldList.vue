@@ -1,5 +1,8 @@
 <template>
-    <div class="scroll">
+    <div v-if="products.length == 0" style="height:80%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <img src="@/assets/spinner.gif">
+    </div>
+    <div v-else class="scroll">
      <div class="grid" id="grid">
         <div v-for="(option, index) in products" :key="index" class="cell">
             <div  class="weight" :style="'background-color: ' + option.weight"></div>

@@ -1,9 +1,9 @@
 <template>
     <MasterHeader @logout="log_out" @change-pass="change_pass = true" />
-    <MasterMenu v-if="draw == 'settings'" @select-question= "visible1" @select-themes= "visible2" @back-to-templates="back_to_templates" @save-tmpl-name="save_tmpl_name" @check-delete="check_delete" :template="current_template" :count="current_template_count" :questions="current_questions" @share-template="share_template" />
+    <MasterMenu v-if="draw == 'settings'" @select-question="visible1" @select-themes="visible2" @back-to-templates="back_to_templates" @save-tmpl-name="save_tmpl_name" @check-delete="check_delete" :template="current_template" :count="current_template_count" :questions="current_questions" @share-template="share_template" />
     <TemplateList v-if="draw == 'grid'" :template_list="user_templates" @select-template="select_template" @add-template="add_template" />
     <TemplateMenu v-if="draw == 'settings'" @round-1="round_1" @round-2="round_2" @games="games" />
-    <TemplateSettings v-if="draw == 'settings'" ref="settings" :visible="visible" :current_round="current_round" :template="current_template" @create-game="create_game" @change-count="set_count" @to-questions="visible1" @back-to-templates="back_to_templates" @show-game="show_game"  @games="games" />
+    <TemplateSettings v-if="draw == 'settings'" ref="settings" :visible="visible" :current_round="current_round" :template="current_template" @create-game="create_game" @change-count="set_count" @to-questions="visible1" @back-to-templates="back_to_templates" @show-game="show_game"  @games="games" @select-question="visible1" />
     <div id="question_preview" v-show="show_masters">
         <div style="float:right;font-size:1.75vw;margin-top:0.25%;margin-right:2.5%;width:10%;text-align:right;" @click="close_share">x</div>
         <div v-show="success_share" id="share_with" style="float:left;font-size:1.25vw;margin-top:0.25%;margin-left:5%;width:82.5%;font-style:italic;"/>
@@ -125,10 +125,14 @@ export default {
         this.$emit('create-game', game_id);
     },
     visible1: function () { // переключение на вкладку выбор вопросов
+      if(this.visible == 4 || this.visible == 5)
+        return;
       this.visible = 1;
       this.$refs.settings.count_field_now();
     },
     visible2: function () { // переключение на вкладку выбор тем
+      if(this.visible == 4 || this.visible == 5)
+          return;
       this.visible = 2
       this.$refs.settings.count_field_now();
     },
@@ -178,6 +182,7 @@ export default {
       this.draw = 'grid';
     },
     add_template: async function () {
+      this.user_templates = [];
       let current_products;
       let second_round_filled = false;
       await fetch(SERVER_PATH + "/product/get/all", {

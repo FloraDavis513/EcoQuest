@@ -229,9 +229,9 @@ export default {
         return;
       let selector = document.getElementById('type_selector_' + index);
       if(index < 5)
-      this.second_round_bar[index] = selector.value != 'Не выбрано';
+        this.second_round_bar[index] = selector.value != 'Не выбрано';
 
-      this.this.template.products.filter((item) => item.round == 2).forEach(item => {
+      this.template.products.filter((item) => item.round == 2).forEach(item => {
         if(item.name == selector.value)
         {
           if(item.second_round_repeating == null)
@@ -244,13 +244,13 @@ export default {
             item.second_round_repeating.delete(index + 1);
         }
       });
-
     },
     get_products_by_round: function()
     {
         return this.template.products.filter((item) => item.round == this.current_round)
     },
     create_game: function () {
+      this.save_game();
       this.$emit('create-game', this.current_game.gameId);
     },
     change_status: function (product_id, question_id, product_index) {
@@ -330,7 +330,14 @@ export default {
       await fetch(SERVER_PATH + "/game/create", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({userId:JSON.parse(localStorage.getItem('user')).userId, name:'Новая игра', message:'Приветственное сообщение', date: date_string, state: JSON.stringify(base_config)})
+        body: JSON.stringify({userId:JSON.parse(localStorage.getItem('user')).userId, name:'Новая игра', message:`Приветствуем Вас на игре по ЭкоСистеме Сбера.
+
+В 1 раунде необходимо собрать максимальное количество цветных пазлов, верно отвечая на вопросы о продуктах ЭкоСистемы. 1 цвет = 1 верный ответ = 1 балл.
+
+Во 2 раунде вопросы на проявление навыков, знаний процессов или общей категории. Количество баллов за верный ответ будет иным.
+
+Полем управляет ведущий.
+Всем удачи!`, date: date_string, state: JSON.stringify(base_config)})
       });
       this.read_games();
     },
@@ -472,6 +479,7 @@ export default {
             headers: {'Content-Type': 'application/json'}
         });
         this.$emit('back-to-templates');
+        this.$emit('select-question');
     },
     cancel_tmpl: function () {
       this.$emit('to-questions');

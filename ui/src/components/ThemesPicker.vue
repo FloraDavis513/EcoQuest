@@ -44,7 +44,7 @@ export default {
             }).then(res => res.json()).then(data => {
                 this.products.forEach(product => {
                     data.forEach(current_product => {
-                        if(product.productId == current_product.productId && current_product.weight > 10)
+                        if(product.productId == current_product.productId && current_product.weight > 50)
                             this.weights.push(product.name);
                     })
                 });

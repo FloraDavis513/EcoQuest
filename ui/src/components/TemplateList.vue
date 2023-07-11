@@ -1,5 +1,8 @@
 <template>
-    <div class="grid" id="grid">
+    <div v-if="template_list.length == 0" style="height:90%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <img src="@/assets/spinner.gif">
+    </div>
+    <div v-else class="grid" id="grid">
         <div class="grid_element" v-for="(option, index) in template_list" :key="index" :index="index" @click="select_template(index)">{{ option.name }}</div>
         <div class="grid_element plus" @click="add_template">+</div>
     </div>

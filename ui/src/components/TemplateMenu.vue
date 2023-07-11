@@ -12,18 +12,24 @@ export default {
             document.getElementById('round_1').style.opacity = 1;
             document.getElementById('round_2').style.opacity = 0.5;
             document.getElementById('games').style.opacity = 0.5;
+            document.getElementById('select_question').style.opacity = 0.5;
+            document.getElementById('select_themes').style.opacity = 1;
             this.$emit('round-1');
         },
         to_round_2: function () {
             document.getElementById('round_1').style.opacity = 0.5;
             document.getElementById('round_2').style.opacity = 1;
             document.getElementById('games').style.opacity = 0.5;
+            document.getElementById('select_question').style.opacity = 0.5;
+            document.getElementById('select_themes').style.opacity = 1;
             this.$emit('round-2');
         },
         to_games: function () {
             document.getElementById('round_1').style.opacity = 0.5;
             document.getElementById('round_2').style.opacity = 0.5;
             document.getElementById('games').style.opacity = 1;
+            document.getElementById('select_question').style.opacity = 0.5;
+            document.getElementById('select_themes').style.opacity = 1;
             this.$emit('games');
         }
   },

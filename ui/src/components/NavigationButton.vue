@@ -1,10 +1,12 @@
 <template>
-    <div id="fields_1" class="to_fields" @click="to_fields_1" style="border-radius:0.75vw 0 0 0.75vw;">1 раунд</div>
-    <div id="fields_2" class="to_fields" @click="to_fields_2">2 раунд</div>
-    <div id="fields_3" class="to_fields" @click="to_fields_3">Викторина</div>
-    <div id="challenge" class="to_fields" @click="to_challenge">Соревнования</div>
-    <div id="masters" class="to_fields" @click="to_masters">Ведущие</div>
-    <div id="players" class="to_fields" @click="to_players" style="border-radius:0 0.75vw 0.75vw 0;">Игроки</div>
+    <div id="menu">
+        <div id="fields_1" class="to_fields" @click="to_fields_1" style="border-radius:0.75vw 0 0 0.75vw;">1 раунд</div>
+        <div id="fields_2" class="to_fields" @click="to_fields_2">2 раунд</div>
+        <div id="fields_3" class="to_fields" @click="to_fields_3">Викторина</div>
+        <div id="challenge" class="to_fields" @click="to_challenge">Соревнования</div>
+        <div id="masters" class="to_fields" @click="to_masters">Ведущие</div>
+        <div id="players" class="to_fields" @click="to_players" style="border-radius:0 0.75vw 0.75vw 0;">Игроки</div>
+    </div>
 </template>
 
 <script>
@@ -84,12 +86,19 @@ export default {
     font-weight: bold;
     color: #ffffff;
     font-size: 1.75vw;
-    float: left;
     width: 16.35%;
-    margin-left: 0.25%;
 }
 
 .to_fields:hover {
     box-shadow: 0 0 10px 100px orange inset;
 }
+
+#menu{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
 </style>

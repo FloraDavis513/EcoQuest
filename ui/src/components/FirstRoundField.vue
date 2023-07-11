@@ -30,12 +30,12 @@
             <div v-if="current_question" id="tour_one_question_sub_header">
               {{get_readiable_type()}}
             </div>
-            <img v-show="turn == 0" :src="img_path + 'team_logo_' + String(Number(logos[0]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-            <img v-show="turn == 1" :src="img_path + 'team_logo_' + String(Number(logos[1]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-            <img v-show="turn == 3" :src="img_path + 'team_logo_' + String(Number(logos[2]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
-            <img v-show="turn == 2" :src="img_path + 'team_logo_' + String(Number(logos[3]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 1" :src="img_path + 'team_logo_' + String(Number(logos[0]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 2" :src="img_path + 'team_logo_' + String(Number(logos[1]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 0" :src="img_path + 'team_logo_' + String(Number(logos[show_last_team_logo()]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
+            <img v-show="turn == 3" :src="img_path + 'team_logo_' + String(Number(logos[3]) + 1) + '.svg'" style="width:7.5%;height:7.5%;position:absolute;left:20%;top:20%;">
             <div id="tour_one_question_body">
-              <textarea v-if="!current_question || current_question.question.media == null" id="greeting_message" rows="10" style="resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;" :value="current_question ? get_full_text() : game_settings.message" @blur="save_new_message" :readonly="logos.length > 0"></textarea>
+              <textarea v-if="!current_question || current_question.question.media == null" id="greeting_message" rows="10" style="resize:none;border:none;width:100%;height:110%;margin-top:5%;font-size:1.35vw;" :value="current_question ? get_full_text() : game_settings.message" @blur="save_new_message" :readonly="logos.length > 0"></textarea>
               <img v-if="current_question && current_question.question.media != null && current_question.question.media.slice(-3) == 'png'" :src="get_preview_media()" style="height: 90%;width: 100%;margin-top: 5%;">
               <video v-if="current_question && current_question.question.media != null && current_question.question.media.slice(-3) == 'mp4'" :src="get_preview_media()" style="height: 90%;width: 100%;margin-top: 5%;" controls="controls"/>
             </div>
@@ -71,7 +71,7 @@ import { SRC_PATH } from '../common_const.js'
 
 export default {
   name: 'FirstRoundField',
-  props: ['logos', 'game_settings', 'current_question'],
+  props: ['logos', 'game_settings', 'current_question', 'turn', 'teams'],
   data(){
     return {
         img_path: SRC_PATH,
@@ -80,6 +80,14 @@ export default {
     }
   },
   methods: {
+    show_last_team_logo: function () {
+      if(this.teams == 2)
+        return 1;
+      if(this.teams == 3)
+        return 3;
+      if(this.teams == 4)
+        return 2;
+    },
     calc_margin_hor: function () {
         if(this.game_settings.state.numFields == 16)
             return "margin-left:7.1%";
@@ -113,9 +121,6 @@ export default {
             return "margin-top:24%";
         else if(this.game_settings.state.numFields == 24)
             return "margin-top:35%";
-    },
-    set_current_turn: function (i) {
-        this.turn = i;
     },
     save_new_message: function () {
         this.$emit('new-message', document.getElementById('greeting_message').value);
@@ -158,7 +163,7 @@ export default {
   mounted: function() {
     this.$emit('update-field');
     if(this.logos.length > 0)
-        document.getElementById('greeting_message').style = 'resize:none;border:none;width:100%;height:90%;margin-top:5%;font-size:1.35vw;outline:none;';
+        document.getElementById('greeting_message').style = 'resize:none;border:none;width:100%;height:110%;margin-top:5%;font-size:1.35vw;outline:none;';
   },
 }
 </script>
