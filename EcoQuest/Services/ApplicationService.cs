@@ -2140,9 +2140,19 @@ namespace EcoQuest
         public IResult GetChartData(eco_questContext db, PlayerStatFilterDTO filter)
         {
             List<ChartDataDTO> res = new List<ChartDataDTO>();
-            List<QuizStatistic> users_stat = (from q in db.QuizStatistics
-                                              where q.UserId == filter.UserId
-                                              select q).ToList();
+            List<QuizStatistic> users_stat;
+            if(filter.UserId == -1)
+            {
+                users_stat = (from q in db.QuizStatistics
+                              select q).ToList();
+            }
+            else
+            {
+                users_stat = (from q in db.QuizStatistics
+                              where q.UserId == filter.UserId
+                              select q).ToList();
+            }
+
             var query = from q in db.Questions
                         group q by q.ProductId into qGroup
                         select new

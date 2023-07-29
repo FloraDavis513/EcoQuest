@@ -1,10 +1,12 @@
 <template>
     <PlayersList ref="masters" @master-chosen="chose_master" :masters="masters" />
+    <PlayerStat ref="stat" :player_id="player_id" />
 </template>
 
 <script>
 import PlayersList from './PlayersList.vue'
 import { SERVER_PATH } from '../common_const.js'
+import PlayerStat from './PlayerStat.vue'
 
 export default {
   name: 'ManagePlayers',
@@ -14,19 +16,32 @@ export default {
       master_chosen: false,
       selected: null,
       masters:[ ],
-
+      player_id: -1
     }
   },
   components: {
     PlayersList,
+    PlayerStat
   }, 
   methods: {
     to_masters: function () {
           this.$emit('to-masters');
       },
-    chose_master: function (master_chosen, selected) {
+    chose_master: async function (master_chosen, selected) {
+        if(selected == this.selected)
+        {
+          this.player_id = -1;
+          await this.$nextTick();
+          this.$refs.stat.change_filter();
+          this.$refs.stat.change_player();
+          return;
+        }
         this.master_chosen = master_chosen;
         this.selected = selected;
+        this.player_id = selected.userId;
+        await this.$nextTick();
+        this.$refs.stat.change_filter();
+        this.$refs.stat.change_player();
     },
     go_back: function () {
         this.master_chosen = false;

@@ -51,7 +51,7 @@
                 />
             </div>
         </div>
-        <div class="button" @click="to_menu">
+        <div v-if="!player_id" class="button" @click="to_menu">
             В меню
         </div>
     </div>
@@ -71,6 +71,7 @@ ChartJS.defaults.color = '#000';
 
 export default {
   name: 'PlayerStat',
+  props:['player_id'],
   components: {
     Bar
   },
@@ -191,10 +192,11 @@ export default {
     },
     change_filter: async function () {
         this.loaded = false;
+        let current_user_id = this.player_id ? this.player_id : JSON.parse(localStorage.getItem('user')).userId;
         fetch(SERVER_PATH + "/statistic/chart", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({  UserId: JSON.parse(localStorage.getItem('user')).userId, 
+                body: JSON.stringify({  UserId: current_user_id,
                                         ProductId: this.product_map.get(document.getElementById("product").value),
                                         Interval: this.period_map.get(document.getElementById("period").value),
                                         Mode: this.mode_map.get(document.getElementById("mode").value)})
@@ -213,6 +215,40 @@ export default {
             this.loaded = true;
             } );
     },
+    change_player: async function () {
+        let current_user_id = this.player_id ? this.player_id : JSON.parse(localStorage.getItem('user')).userId;
+        console.log(this.player_id);
+        console.log(current_user_id);
+        fetch(SERVER_PATH + "/statistic/user", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({UserId: current_user_id, ProductId: -1, Interval: 'all', Mode: 'common'})
+        }).then( res => res.json() ).then( data => {
+            if(data.length > 0)
+            {
+                this.base_metrics = data[0];
+                this.base_metrics.place = 0;
+            }
+            else
+            {
+                this.base_metrics.place = 0;
+                this.base_metrics.total_quiz = 0;
+                this.base_metrics.percent_correct = 0;
+                this.base_metrics.badges = 0;
+            }
+            } );
+
+        fetch(SERVER_PATH + "/statistic/user", {
+                method: "POST",
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({UserId: -1, ProductId: -1, Interval: 'all', Mode: 'common'})
+        }).then( res => res.json() ).then( data => {
+            data.forEach((user, index) => {
+                if(user.user_id == current_user_id)
+                    this.base_metrics.place = index + 1;
+                });
+            } );
+    },
   },
   beforeMount: async function () {
     fetch(SERVER_PATH + "/product/get/all/3", {
@@ -227,10 +263,12 @@ export default {
                 this.chartOptions.indexAxis = 'y'
             } );
 
+    let current_user_id = this.player_id ? this.player_id : JSON.parse(localStorage.getItem('user')).userId;
+
     fetch(SERVER_PATH + "/statistic/user", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({UserId: JSON.parse(localStorage.getItem('user')).userId, ProductId: -1, Interval: 'all', Mode: 'common'})
+                body: JSON.stringify({UserId: current_user_id, ProductId: -1, Interval: 'all', Mode: 'common'})
         }).then( res => res.json() ).then( data => {
             this.base_metrics = data[0];
             this.base_metrics.place = 0;
@@ -242,7 +280,7 @@ export default {
                 body: JSON.stringify({UserId: -1, ProductId: -1, Interval: 'all', Mode: 'common'})
         }).then( res => res.json() ).then( data => {
             data.forEach((user, index) => {
-                if(user.user_id == JSON.parse(localStorage.getItem('user')).userId)
+                if(user.user_id == current_user_id)
                     this.base_metrics.place = index + 1;
                 });
             } );
@@ -250,7 +288,7 @@ export default {
     fetch(SERVER_PATH + "/statistic/chart", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({UserId: JSON.parse(localStorage.getItem('user')).userId, ProductId: -1, Interval: 'all', Mode: 'train'})
+                body: JSON.stringify({UserId: current_user_id, ProductId: -1, Interval: 'all', Mode: 'train'})
         }).then( res => res.json() ).then( data => {
             this.raw_chart_data = data;
             data.forEach(stat_row => {

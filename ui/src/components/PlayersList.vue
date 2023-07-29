@@ -31,6 +31,8 @@ export default {
             {
                 if(i != index)
                     all_elements[i].style.opacity = 1;
+                else if(all_elements[i].style.opacity == 0.5)
+                    all_elements[i].style.opacity = 1;
                 else
                     all_elements[i].style.opacity = 0.5;
             }
