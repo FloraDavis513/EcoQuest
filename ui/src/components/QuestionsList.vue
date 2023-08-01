@@ -8,7 +8,7 @@
             <div v-for="(option, index) in selected_product.questions" :key="index" class="cell">
                 <div  class="weight" :style="'background-color: ' + option.weight"></div>
                 <div class="grid_element" @click="choose_question(index)">
-                    {{ option.shortText }}
+                    {{ option.shortText !== "" ? option.shortText : ( "Вопрос " + ( String(index + 1) ) ) }}
                 </div>
             </div>
             <div class="cell">
@@ -18,14 +18,14 @@
         </div>
         <div id="edit_window" class="edit_window" v-if="draw === 'edit'">
             <img @click="to_questions" src="@/assets/go_back.png" alt="">
-            <div v-if="get_preview()" :style="'width:15%;height:15%;margin-left:2.5%;float:left;position:relative;'" id="selected_logo_preview">
+            <div :style="'width:15%;height:15%;margin-left:2.5%;float:left;position:relative;'" id="selected_logo_preview">
                 <img id="logo_preview" :src="get_preview()" style="position:absolute;width:100%;height:100%;">
                 <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;" @change="upload_logo">
             </div>
-            <div v-else style="width:15%;height:15%;margin-left:5%;float:left;border:0.15vw solid silver;border-radius:0.75vw;color:silver;font-size:2vw;text-align:center;position:relative;">
+            <!-- <div v-else style="width:15%;height:15%;margin-left:5%;float:left;border:0.15vw solid silver;border-radius:0.75vw;color:silver;font-size:2vw;text-align:center;position:relative;">
                 <p style="position:absolute;left:30%;top:1%;">Лого</p> 
                 <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;" @change="upload_logo">
-            </div>
+            </div> -->
             <div :style="'width:15%;height:15%;margin-left:2.5%;float:left;border-radius:0.75vw;' + new_version_product.color">
                 <input id="color_switcher" type="color" style="width:100%;height:100%;opacity:0;" @input="save_new_color">
             </div>
@@ -69,7 +69,7 @@
                 </div>
                 <div id="second_line" style="width:100%;height:10%;margin-top:2%;">
                     <div style="width:30%;float:left;" id="category_header">Категория вопроса</div>
-                    <select style="float:left;width:30%;" id="type_selector" :value="get_displayed_type()" @blur="save_edit_changes" @input="update_is_media">
+                    <select style="float:left;width:30%;" id="type_selector" :value="displayed_question_type" @input="update_is_media">
                         <option>С выбором ответа</option>
                         <option>Без выбора ответа</option>
                         <option>Вопрос-аукцион</option>
@@ -114,8 +114,9 @@
                 </div>
                 <div id="media_preview" v-show="media_preview">
                     <div style="float:right;margin-top:1%;margin-right:1%;font-size:1.35vw;" @click="media_preview = false">X</div>
-                    <img id="img_media_preview" v-if="selected_question.media && selected_question.media.slice(-3) == 'png'" :src="get_preview_media()" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;"/>
-                    <video id="video_media_preview" v-if="selected_question.media && selected_question.media.slice(-3) == 'mp4'" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;" controls="controls" :src="get_preview_media()"/>
+                    <img id="media_preview_content" v-if="!selected_question.media" src="@/assets/no_image.svg.png" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;"/>
+                    <img id="media_preview_content" v-else-if="selected_question.media.slice(-3) == 'png'" :src="get_preview_media()" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;"/>
+                    <video id="media_preview_content" v-else-if="selected_question.media.slice(-3) == 'mp4'" style="width:80%;height:80%;margin-left:10%;margin-top:2.5%;" controls="controls" :src="get_preview_media()"/>
                     <div class="button" style="padding-top:1.05%;padding-bottom:1.05%;width:21.15%;margin-left:18%;" @click="upload_media">Загрузить</div>
                     <div class="button" style="padding-top:1.05%;padding-bottom:1.05%;width:21.15%;margin-left:18%;" @click="delete_media">Удалить</div>
                 </div>
@@ -161,7 +162,8 @@ export default {
             current_ans_index: null,
             current_ans: null,
             media_preview: false,
-            relation_map: new Map([['Не выбрано', null]])
+            relation_map: new Map([['Не выбрано', null]]),
+            displayed_question_type: ""
     }
   },
   methods: {
@@ -178,7 +180,8 @@ export default {
                     await fetch(SERVER_PATH + "/question/media/create/" + this.selected_question.questionId, {
                     method: "POST",
                     body: formData
-                    });
+                    }).then( this.$emit('reload-question') );
+                    document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + ".png";
                 }
                 else
                 {
@@ -186,6 +189,7 @@ export default {
                     method: "POST",
                     body: formData
                     }).then( this.$emit('reload-question') );
+                    document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + ".png";
                 } 
             }
             input.click();
@@ -219,7 +223,7 @@ export default {
         },
         get_preview: function () {
             if(!this.selected_product.logo)
-                return null;
+                return SRC_PATH + 'empty_logo.png' + '?' + Date.now();
             const regex = /logo\d+.\w+/g;
             const found = this.selected_product.logo.match(regex);
             return SRC_PATH + found + '?' + Date.now();
@@ -280,7 +284,12 @@ export default {
         },
         update_is_media: function () {
             if(document.getElementById('type_selector'))
+            {
+                this.selected_question.shortText = document.getElementById('short_name').value;
+                this.selected_question.type = this.get_db_type(document.getElementById('type_selector').value);
+                this.selected_question.text = document.getElementById('wording').value;
                 this.is_media = document.getElementById('type_selector').value == 'Вопрос с медиа фрагментом';
+            }
         },
         add_product: function () {
             this.$emit('add-field');
@@ -388,6 +397,10 @@ export default {
                 method: "GET",
                 headers: {'Content-Type': 'application/json'},
                 }).then(res => res.json()).then(data => document.getElementById('question_relation').value = data.shortText);
+    }
+    if(document.getElementById('type_selector'))
+    {
+        this.displayed_question_type = this.get_displayed_type();
     }
   }
 }
@@ -803,7 +816,7 @@ hr{
     opacity: 0;
 }
 
-#img_media_preview:hover{
+#media_preview_content:hover{
     transform: scale(1); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
 }
 

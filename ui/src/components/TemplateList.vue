@@ -1,5 +1,5 @@
 <template>
-    <div v-if="template_list.length == 0" style="height:90%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div v-if="load_templates" style="height:90%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
         <img src="@/assets/spinner.gif">
     </div>
     <div v-else class="grid" id="grid">
@@ -11,7 +11,7 @@
 <script>
 export default {
   name: 'TemplateList',
-  props:['template_list'],
+  props:['template_list', 'load_templates'],
   data(){
     return {
     }

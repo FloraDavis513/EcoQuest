@@ -7,9 +7,9 @@
         <div @click="edit" id="edit">
             Редактировать
         </div>
-        <div @click="save_product" id="save_product">
+        <!-- <div @click="save_product" id="save_product">
             Сохранить
-        </div>
+        </div> -->
         <div @click="delete_button" id="delete">
             Удалить
         </div>

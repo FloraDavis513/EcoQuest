@@ -67,7 +67,7 @@ namespace EcoQuest
                 return (false, Results.BadRequest("Название продукта не может иметь значение null"));
 
             Product? targetProduct = (from p in db.Products
-                                      where p.ProductId != request.ProductId && p.Name == request.Name
+                                      where p.ProductId != request.ProductId && p.Name == request.Name && p.Round == request.Round
                                       select p).FirstOrDefault();
 
             if (targetProduct != null)

@@ -7,7 +7,7 @@
 
     <ChallengeList v-if="current_view == 'challenge'" :challenge="challenge" />
 
-    <FieldList v-if="current_view == 'fields'" @add-field="add_field" @select-product="select_product" :products="products" />
+    <FieldList v-if="current_view == 'fields'" @add-field="add_field" @select-product="select_product" :products="products" :load_products="load_products" />
     <AddFields v-if="current_view == 'fields'" @close-add-field="close_add_field" @create-field="create_field" :is_add_product="is_add_product" />
 
     <ProductMenu v-if="current_view == 'questions'" :current_view="current_view" :round="current_round" :selected_product="selected_product" @fields-1="to_fields_1" @fields-2="to_fields_2" @fields-3="to_fields_3" @delete-product="delete_product" @edit-product="edit_product" />
@@ -58,6 +58,7 @@ export default {
         selected_product: null,
         draw: 'questions',
         products: [],
+        load_products: true,
         cache_product: ['name', 'colour'],
         change_pass: false,
         error_change: false,
@@ -222,11 +223,12 @@ export default {
         log_out: function(){
             this.$emit('logout');
         },
-        read_product_list: function(){
-            fetch(SERVER_PATH + "/product/get/all/" + String(this.current_round), {
+        read_product_list: async function() {
+            this.load_products = true;
+            await fetch(SERVER_PATH + "/product/get/all/" + String(this.current_round), {
             method: "GET",
             headers: {'Content-Type': 'application/json'}
-            }).then( res => res.json() ).then( data => this.fill_product_list(data) );
+            }).then( res => res.json() ).then( data => { this.fill_product_list(data); this.load_products = false; } );
         },
         fill_product_list: function(data){
             this.products = data;

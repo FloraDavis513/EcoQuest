@@ -1,7 +1,7 @@
 <template>
     <MasterHeader @logout="log_out" @change-pass="change_pass = true" />
     <MasterMenu v-if="draw == 'settings'" @select-question="visible1" @select-themes="visible2" @back-to-templates="back_to_templates" @save-tmpl-name="save_tmpl_name" @check-delete="check_delete" :template="current_template" :count="current_template_count" :questions="current_questions" @share-template="share_template" />
-    <TemplateList v-if="draw == 'grid'" :template_list="user_templates" @select-template="select_template" @add-template="add_template" />
+    <TemplateList v-if="draw == 'grid'" :template_list="user_templates" :load_templates="load_templates" @select-template="select_template" @add-template="add_template" />
     <TemplateMenu v-if="draw == 'settings'" @round-1="round_1" @round-2="round_2" @games="games" />
     <TemplateSettings v-if="draw == 'settings'" ref="settings" :visible="visible" :current_round="current_round" :template="current_template" @create-game="create_game" @change-count="set_count" @to-questions="visible1" @back-to-templates="back_to_templates" @show-game="show_game"  @games="games" @select-question="visible1" />
     <div id="question_preview" v-show="show_masters">
@@ -49,6 +49,7 @@ export default {
       current_questions: null,
       products: [],
       user_templates: [],
+      load_templates: true,
       show_masters: false,
       masters: [],
       success_share: false,
@@ -217,11 +218,12 @@ export default {
     save_tmpl_name: function (data) {
       this.current_template.name = data;
     },
-    read_user_templates: function () {
-      fetch(SERVER_PATH + "/gameBoard/get/all/" + JSON.parse(localStorage.getItem('user')).userId, {
+    read_user_templates: async function () {
+      this.load_templates = true;
+      await fetch(SERVER_PATH + "/gameBoard/get/all/" + JSON.parse(localStorage.getItem('user')).userId, {
             method: "GET",
             headers: {'Content-Type': 'application/json'}
-            }).then( res => res.json() ).then( data => this.user_templates = data );
+            }).then( res => res.json() ).then( data => { this.user_templates = data; this.load_templates = false; } );
     },
   }, 
   beforeMount: async function () {

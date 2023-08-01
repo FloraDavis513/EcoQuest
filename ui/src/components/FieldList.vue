@@ -1,5 +1,5 @@
 <template>
-    <div v-if="products.length == 0" style="height:80%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+    <div v-if="load_products" style="height:80%;display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
         <img src="@/assets/spinner.gif">
     </div>
     <div v-else class="scroll">
@@ -7,7 +7,7 @@
         <div v-for="(option, index) in products" :key="index" class="cell">
             <div  class="weight" :style="'background-color: ' + option.weight"></div>
             <div class="grid_element"  @click="select_product(index)"  v-bind:style="option.colour">
-                {{ option.name }}
+                {{ option.name !== "" ? option.name : ( "Продукт " + ( String(index + 1) ) ) }}
             </div>
         </div>
         <div class="cell">
@@ -21,7 +21,7 @@
 <script>
 export default {
   name: 'FieldList',
-  props:['products'],
+  props:['products', 'load_products'],
   data(){
     return {
     }

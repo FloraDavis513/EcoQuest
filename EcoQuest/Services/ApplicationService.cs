@@ -800,7 +800,8 @@ namespace EcoQuest
 
             foreach (var product in targetProducts)
             {
-                IXLWorksheet worksheet = workbook.Worksheets.Add(product.Name);
+                var sheet_name = product.Round == 3 ? "Викторина" : product.Round.ToString() + " раунд";
+                IXLWorksheet worksheet = workbook.Worksheets.Add($"{product.Name} ({sheet_name})"); ;
 
                 worksheet.Cell("A" + row).Value = "Продукт";
 
@@ -896,7 +897,8 @@ namespace EcoQuest
                     worksheet.Cell("E" + row).Value = question.Text;
                     worksheet.Cell("F" + row).Value = answers;
                     worksheet.Cell("G" + row).Value = question.Media;
-                    worksheet.Cell("H" + row).Value = question.LastEditDate;
+                    var date = DateTime.Parse(question.LastEditDate, new CultureInfo("en-US"), DateTimeStyles.None);
+                    worksheet.Cell("H" + row).Value = date.ToString("dd.MM.yyyy hh:mm:ss");
 
                     worksheet.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = XLColor.LightGreen;
 
@@ -1013,6 +1015,7 @@ namespace EcoQuest
             {
                 foreach (var question in product.Questions)
                     question.Product = null;
+                product.Questions = product.Questions.OrderBy(x => x.QuestionId).ToList();
             }
 
             return Results.Json(targetProducts.OrderBy(x => x.ProductId));
@@ -1491,7 +1494,8 @@ namespace EcoQuest
                     foreach (var player in team.Players)
                     {
                         worksheet.Cell("A" + row).Value = record.RecordId;
-                        worksheet.Cell("B" + row).Value = record.Date;
+                        var date = DateTime.Parse(record.Date, new CultureInfo("en-US"), DateTimeStyles.None);
+                        worksheet.Cell("B" + row).Value = date.ToString("dd.MM.yyyy hh:mm:ss");
                         worksheet.Cell("C" + row).Value = record.Duration;
                         worksheet.Cell("D" + row).Value = $"{record.LastName} {record.FirstName} {record.Patronymic}";
                         worksheet.Cell("E" + row).Value = record.Login;
@@ -2457,7 +2461,8 @@ namespace EcoQuest
                 {
                     row++;
                     worksheet.Cell("A" + row).Value = record.Id.ToString();
-                    worksheet.Cell("B" + row).Value = record.Date;
+                    var date = DateTime.Parse(record.Date, new CultureInfo("en-US"), DateTimeStyles.None);
+                    worksheet.Cell("B" + row).Value = date.ToString("dd.MM.yyyy hh:mm:ss");
                     if (player != null)
                         worksheet.Cell("C" + row).Value = $"{player.LastName} {player.FirstName} {player.Patronymic}";
                     worksheet.Cell("D" + row).Value = mode_dict[record.Mode];
