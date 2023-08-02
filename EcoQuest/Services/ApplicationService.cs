@@ -2459,6 +2459,8 @@ namespace EcoQuest
                 List<QuizStatAnswersDTO>? stat_answers = JsonSerializer.Deserialize<List<QuizStatAnswersDTO>>(record.UserAnswers);
                 foreach (QuizStatAnswersDTO answer in stat_answers)
                 {
+                    if (!product_name_by_id.ContainsKey(answer.ProductId) || !question_by_id.ContainsKey(answer.QuestionId))
+                        continue;
                     row++;
                     worksheet.Cell("A" + row).Value = record.Id.ToString();
                     var date = DateTime.Parse(record.Date, new CultureInfo("en-US"), DateTimeStyles.None);

@@ -175,13 +175,20 @@ export default {
                 let file = e.target.files[0];
                 let formData = new FormData();
                 formData.set('uploads', file);
+                const regex = /media\d+.\w+/g;
+                const found = document.getElementById("media_preview_content").src.match(regex);
+                const current_type = found ? found[0].slice(-3) : "png";
+                const file_type = file.type.slice(-3);
                 if(!this.selected_question.media)
                 {
                     await fetch(SERVER_PATH + "/question/media/create/" + this.selected_question.questionId, {
                     method: "POST",
                     body: formData
                     }).then( this.$emit('reload-question') );
-                    document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + ".png";
+                    if( current_type == file_type )
+                        document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + file_type;
+                    else
+                        this.media_preview = false;
                 }
                 else
                 {
@@ -189,8 +196,11 @@ export default {
                     method: "POST",
                     body: formData
                     }).then( this.$emit('reload-question') );
-                    document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + ".png";
-                } 
+                    if( current_type == file_type )
+                        document.getElementById("media_preview_content").src = SRC_PATH + "media" + this.selected_question.questionId + file_type;
+                    else
+                        this.media_preview = false;
+                }
             }
             input.click();
         },
@@ -198,6 +208,8 @@ export default {
             fetch(SERVER_PATH + "/question/media/delete/" + this.selected_question.questionId, {
                     method: "DELETE",
                     });
+            this.media_preview = false;
+            this.selected_question.media = null;
         },
         upload_logo: async function () {
             const uploadFileEle = document.getElementById("selected_logo");
