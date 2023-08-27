@@ -46,7 +46,7 @@
 </div>
 <div v-if="visible==1" class="item_block_scroll">
       <div v-for="(product,index) in get_products_by_round()" :key="index" id="size_themes">
-        <div class="themes_themes" :style="product.colour" >
+        <div class="themes_themes" :style="'color:' + (product.round == 1 ? 'white' : 'black') + ';background-color:' + product.colour + ';'">
             <div v-show="current_round == 1" class="weight" :style="'background-color:' + product.weight"/>
             <div class="text_themes" :style="current_round == 1 ? 'margin-left:25%;' : 'margin-left:30%;'" >
               {{product.name}}
@@ -122,7 +122,7 @@
   <div class="item_block_scroll_2" >
       <div class="block_all_themes_filed" >
         <div v-for="(product,index) in get_products_by_round()" :key="index" id="size_themes_2" >
-              <div class="themes_themes_2" :style="product.colour">
+              <div class="themes_themes_2" :style="'color:' + (product.round == 1 ? 'white' : 'black') + ';background-color:' + product.colour + ';'">
                   <div class="text_fields_themes" >
                     {{product.name}}
                   </div>

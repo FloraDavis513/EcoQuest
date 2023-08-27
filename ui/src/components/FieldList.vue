@@ -6,8 +6,8 @@
      <div class="grid" id="grid">
         <div v-for="(option, index) in products" :key="index" class="cell">
             <div  class="weight" :style="'background-color: ' + option.weight"></div>
-            <div class="grid_element"  @click="select_product(index)"  v-bind:style="option.colour">
-                {{ option.name !== "" ? option.name : ( "Продукт " + ( String(index + 1) ) ) }}
+            <div class="grid_element"  @click="select_product(index)" :style="'color:' + (option.round == 1 ? 'white' : 'black') + ';background-color:' + option.colour + ';'">
+                {{ option.name !== "" && option.name !== null ? option.name : ( "Продукт " + ( String(index + 1) ) ) }}
             </div>
         </div>
         <div class="cell">

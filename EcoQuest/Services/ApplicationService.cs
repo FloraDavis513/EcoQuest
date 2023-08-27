@@ -829,7 +829,7 @@ namespace EcoQuest
                 worksheet.Cell("B" + row).Value = product.Name;
                 worksheet.Cell("C" + row).Value = product.Colour;
                 worksheet.Cell("D" + row).Value = product.Logo;
-                worksheet.Cell("E" + row).Value = product.Round;
+                worksheet.Cell("E" + row).Value = product.Round != 3 ? product.Round.ToString() : "Викторина";
 
                 worksheet.Range($"A{row}:E{row}").Style.Fill.BackgroundColor = XLColor.LightGreen;
 
@@ -1159,10 +1159,15 @@ namespace EcoQuest
                     targetProduct.Round = newProduct.Round;
                     targetProduct.Logo = newProduct.Logo;
 
-                    targetProduct.Questions.Clear();
+                    HashSet<long> touched_questions = new HashSet<long>();
+                    var start_time = DateTime.UtcNow;
 
                     foreach (var question in newProduct.Questions)
                     {
+                        touched_questions.Add(question.QuestionId);
+                        Question? old_question = (from p in db.Questions
+                                            where p.QuestionId == question.QuestionId
+                                            select p).FirstOrDefault();
                         Question newQuestion = new Question()
                         {
                             Answers = question.Answers,
@@ -1175,9 +1180,29 @@ namespace EcoQuest
 
                         newQuestion.LastEditDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time")).ToString(new CultureInfo("en-US"));
                         if (newQuestion.Type != "MEDIA") newQuestion.Media = null;
-
-                        targetProduct.Questions.Add(newQuestion);
+                        if (old_question == null)
+                        {
+                            targetProduct.Questions.Add(newQuestion);
+                        }
+                        else
+                        {
+                            if (question.Answers != old_question.Answers || question.Type != old_question.Type || question.ShortText != old_question.ShortText || question.Text != old_question.Text)
+                            {
+                                targetProduct.Questions.Remove(old_question);
+                                targetProduct.Questions.Add(newQuestion);
+                            }
+                        }
                     }
+                    List<Question> questions_after_download = new List<Question>();
+                    foreach(var question in targetProduct.Questions)
+                    {
+                        var last_edit_time = DateTime.Parse(question.LastEditDate, new CultureInfo("en-US"));
+                        if (touched_questions.Contains(question.QuestionId) || last_edit_time > start_time)
+                            questions_after_download.Add(question);
+                    }
+
+                    targetProduct.Questions = questions_after_download;
+
 
                     db.SaveChanges();
                 }

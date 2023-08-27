@@ -1,6 +1,6 @@
 <template>
      <div id="menu" class="menu">
-        <div id="avatar" class="avatar" :style="selected_product.colour">
+        <div id="avatar" class="avatar" :style="'color:' + (round == 1 ? 'white' : 'black') + ';background-color:' + selected_product.colour + ';'">
             {{selected_product.name}}
         </div>
 
@@ -108,6 +108,7 @@ export default {
     border: solid black 2px;
     font-size: 1.5vw;
     margin-top: 5%;
+    color: white;
 }
 
 #edit, #back, #delete, #save_product{

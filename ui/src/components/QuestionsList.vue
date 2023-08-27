@@ -8,7 +8,7 @@
             <div v-for="(option, index) in selected_product.questions" :key="index" class="cell">
                 <div  class="weight" :style="'background-color: ' + option.weight"></div>
                 <div class="grid_element" @click="choose_question(index)">
-                    {{ option.shortText !== "" ? option.shortText : ( "Вопрос " + ( String(index + 1) ) ) }}
+                    {{ option.shortText !== "" && option.shortText !== null ? option.shortText : ( "Вопрос " + ( String(index + 1) ) ) }}
                 </div>
             </div>
             <div class="cell">
@@ -26,7 +26,7 @@
                 <p style="position:absolute;left:30%;top:1%;">Лого</p> 
                 <input id="selected_logo" type="file" name="uploads" style="width:100%;height:100%;" @change="upload_logo">
             </div> -->
-            <div :style="'width:15%;height:15%;margin-left:2.5%;float:left;border-radius:0.75vw;' + new_version_product.color">
+            <div :style="'width:15%;height:15%;margin-left:2.5%;float:left;border-radius:0.75vw;background-color:' + new_version_product.color + ';'">
                 <input id="color_switcher" type="color" style="width:100%;height:100%;opacity:0;" @input="save_new_color">
             </div>
             <input id="edit_window_input" class="edit_window_input" placeholder="Введите новое название продукта" :value="new_version_product.name" @blur="save_new_name" />

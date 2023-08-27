@@ -5,7 +5,7 @@
         <div class="product_main_one">Старт</div>
         </div>
         <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_1" :style="calc_margin_hor()">
-          <div v-if="!(game_settings.state.field_config[i - 1].logo)" class="product_themes_one" :id="'field_product_' + (i - 1)" :style="game_settings.state.field_config[i - 1].colour">
+          <div v-if="!(game_settings.state.field_config[i - 1].logo)" class="product_themes_one" :id="'field_product_' + (i - 1)" :style="'color:white;background-color:' + game_settings.state.field_config[i - 1].colour + ';'" >
             {{ game_settings.state.field_config[i - 1].name }}
           </div>
           <img v-else :id="'field_product_' + (i - 1)" :src="img_path + game_settings.state.field_config[i - 1].logo  + '?' + Date.now()" style="width:124%;height:125%;" :alt="game_settings.state.field_config[i - 1].name" @change="update_poses" @show="update_poses">
@@ -17,7 +17,7 @@
     <div class="second_line">
         <div class="left_border">
             <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_2" :style="calc_margin_ver_left(i)">
-              <div v-if="!(game_settings.state.field_config[game_settings.state.numFields - i].logo)" class="product_themes_one" :id="'field_product_' + (game_settings.state.numFields - i)" :style="game_settings.state.field_config[game_settings.state.numFields - i].colour">
+              <div v-if="!(game_settings.state.field_config[game_settings.state.numFields - i].logo)" class="product_themes_one" :id="'field_product_' + (game_settings.state.numFields - i)" :style="'color:white;background-color:' + game_settings.state.field_config[game_settings.state.numFields - i].colour + ';'">
                 {{game_settings.state.field_config[game_settings.state.numFields - i].name }}
               </div>
               <img v-else :id="'field_product_' + (game_settings.state.numFields - i)" :src="img_path + game_settings.state.field_config[game_settings.state.numFields - i].logo  + '?' + Date.now()" style="width:138%;height:145%;" :alt="game_settings.state.field_config[game_settings.state.numFields - i].name">
@@ -42,7 +42,7 @@
         </div>
         <div class="right_border">
             <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_3" :style="calc_margin_ver_right(i)">
-                <div v-if="!(game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].logo)" class="product_themes_one" :id="'field_product_' + (i - 1 + (game_settings.state.numFields / 4))" :style="game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].colour">
+                <div v-if="!(game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].logo)" class="product_themes_one" :id="'field_product_' + (i - 1 + (game_settings.state.numFields / 4))" :style="'color:white;background-color:' + game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].colour + ';'">
                   {{ game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].name }}
                 </div>
                 <img v-else :id="'field_product_' + (i - 1 + (game_settings.state.numFields / 4))" :src="img_path + game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].logo + '?' + Date.now()" style="width:104%;height:145%;" :alt="game_settings.state.field_config[i - 1 + (game_settings.state.numFields / 4)].name">
@@ -54,7 +54,7 @@
         <div class="product_main_one">Старт</div>
         </div>
         <div v-for="i in (game_settings.state.numFields / 4)" :key="i" class="start_themes_4" :style="calc_margin_hor()">
-          <div v-if="!(game_settings.state.field_config[3*game_settings.state.numFields/4 - i].logo)" class="product_themes_one" :id="'field_product_' + (3*game_settings.state.numFields/4 - i)" :style="game_settings.state.field_config[3*game_settings.state.numFields/4 - i].colour">
+          <div v-if="!(game_settings.state.field_config[3*game_settings.state.numFields/4 - i].logo)" class="product_themes_one" :id="'field_product_' + (3*game_settings.state.numFields/4 - i)" :style="'color:white;background-color:' + game_settings.state.field_config[3*game_settings.state.numFields/4 - i].colour + ';'">
             {{ game_settings.state.field_config[3*game_settings.state.numFields/4 - i].name }}
           </div>
           <img v-else :id="'field_product_' + (3*game_settings.state.numFields/4 - i)" :src="img_path + game_settings.state.field_config[3*game_settings.state.numFields/4 - i].logo + '?' + Date.now()" style="width:124%;height:125%;" :alt="game_settings.state.field_config[3*game_settings.state.numFields/4 - i].name">
