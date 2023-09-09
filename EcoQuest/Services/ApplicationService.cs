@@ -1160,7 +1160,7 @@ namespace EcoQuest
                     targetProduct.Logo = newProduct.Logo;
 
                     HashSet<long> touched_questions = new HashSet<long>();
-                    var start_time = DateTime.UtcNow;
+                    var start_time = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Ekaterinburg Standard Time"));
 
                     foreach (var question in newProduct.Questions)
                     {
