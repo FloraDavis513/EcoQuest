@@ -1188,6 +1188,8 @@ namespace EcoQuest
                         {
                             if (question.Answers != old_question.Answers || question.Type != old_question.Type || question.ShortText != old_question.ShortText || question.Text != old_question.Text)
                             {
+                                newQuestion.ProductId = old_question.ProductId;
+                                newQuestion.QuestionId = old_question.QuestionId;
                                 targetProduct.Questions.Remove(old_question);
                                 targetProduct.Questions.Add(newQuestion);
                             }
