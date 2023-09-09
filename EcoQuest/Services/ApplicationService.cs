@@ -846,6 +846,18 @@ namespace EcoQuest
 
                 row++;
 
+                worksheet.Cell("A" + row).Value = "Не редактировать";
+                worksheet.Cell("G" + row).Value = "Не редактировать";
+
+                worksheet.Range($"A{row}:H{row}").Style.Fill.BackgroundColor = XLColor.DarkGreen;
+                worksheet.Range($"A{row}:H{row}").Style.Font.FontColor = XLColor.White;
+
+                worksheet.Range($"A{row}:B{row}").Merge();
+                worksheet.Range($"C{row}:F{row}").Merge();
+                worksheet.Range($"G{row}:H{row}").Merge();
+
+                row++;
+
                 worksheet.Cell("A" + row).Value = "ID продукта";
                 worksheet.Cell("B" + row).Value = "ID вопроса";
                 worksheet.Cell("C" + row).Value = "Категория";
@@ -1063,7 +1075,7 @@ namespace EcoQuest
                         Logo = logo
                     };
 
-                    int row = 7;
+                    int row = 8;
 
                     bool IsRowEmpty(IXLWorksheet worksheet, int row)
                     {
