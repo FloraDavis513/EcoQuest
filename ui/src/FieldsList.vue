@@ -128,7 +128,7 @@ export default {
             await fetch(SERVER_PATH + "/product/create", {
                 method: "POST",
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: name, colour: "background:" + color + ";color:white;", questions: [], logo: null, round: this.current_round})
+                body: JSON.stringify({name: name, colour: color, questions: [], logo: null, round: this.current_round})
                 })
             this.read_product_list();
         },
